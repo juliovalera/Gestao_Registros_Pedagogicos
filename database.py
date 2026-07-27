@@ -1,3 +1,5 @@
+"""Camada de acesso ao banco SQLite local."""
+
 from __future__ import annotations
 
 import datetime as dt

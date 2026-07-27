@@ -1,3 +1,5 @@
+"""Tela e formulário de intercorrências pedagógicas."""
+
 from __future__ import annotations
 
 import tkinter as tk

@@ -1,3 +1,5 @@
+"""Utilitários compartilhados da interface e do projeto."""
+
 from __future__ import annotations
 
 import calendar

@@ -1,3 +1,5 @@
+"""Aplicação principal da Gestão de Registros Pedagógicos."""
+
 from __future__ import annotations
 
 import sys

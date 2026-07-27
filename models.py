@@ -1,3 +1,5 @@
+"""Constantes e listas de apoio do sistema pedagógico."""
+
 APP_NAME = "Gestão de Registros Pedagógicos"
 APP_CREDITS = (
     "Créditos: Professor Júlio César Valera\n"

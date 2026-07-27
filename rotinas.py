@@ -1,3 +1,5 @@
+"""Tela e formulário de rotinas docentes."""
+
 from __future__ import annotations
 
 import tkinter as tk

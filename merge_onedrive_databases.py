@@ -1,3 +1,5 @@
+"""Utilitário local para conferência e mesclagem de bancos duplicados."""
+
 from __future__ import annotations
 
 import shutil

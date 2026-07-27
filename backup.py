@@ -1,3 +1,5 @@
+"""Ferramentas de backup e restauração local."""
+
 from __future__ import annotations
 
 import os
