@@ -2,6 +2,8 @@
 
 Sistema local em Python 3 para registrar, consultar, analisar e exportar informações da rotina pedagógica escolar de forma organizada, cronológica e profissional.
 
+Versão atual: `1.001`
+
 ## Visão geral
 
 O projeto foi pensado para apoiar o trabalho de professores, coordenação e equipes pedagógicas no acompanhamento do dia a dia escolar.
@@ -19,6 +21,16 @@ Com ele, é possível registrar:
 - intercorrências e situações relevantes da rotina
 
 O objetivo é facilitar a memória institucional, a consulta posterior, a produção de relatórios e a análise de dados de maneira simples e totalmente local.
+
+## Controle de versão
+
+O projeto passa a adotar versionamento sequencial simples.
+
+- versão inicial formal: `1.001`
+- a cada implementação, ajuste ou correção: somar `0.001`
+- exemplos futuros: `1.002`, `1.003`, `1.004`
+
+Essa versão pode ser exibida na interface do sistema e também na documentação do projeto.
 
 ## Créditos
 

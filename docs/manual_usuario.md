@@ -2,9 +2,24 @@
 
 Este manual apresenta um fluxo simples e acolhedor para uso diário do sistema em contextos pedagógicos.
 
+Versão atual do sistema: `1.001`
+
 ## Finalidade
 
 O sistema foi criado para registrar, consultar e analisar intercorrências diárias, ausências de professores e rotinas docentes no contexto pedagógico escolar, de forma totalmente local.
+
+## Versionamento
+
+O sistema passa a utilizar uma numeração sequencial simples de versão.
+
+- versão inicial formal: `1.001`
+- cada nova implementação ou correção acrescenta `0.001`
+
+Exemplo:
+
+- `1.001`
+- `1.002`
+- `1.003`
 
 Créditos:
 

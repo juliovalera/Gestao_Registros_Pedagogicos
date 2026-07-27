@@ -14,7 +14,7 @@ from cadastros import CadastrosWindow
 from consultas import ConsultasWindow
 from database import DatabaseManager
 from intercorrencias import IntercorrenciasWindow
-from models import APP_CREDITS, APP_NAME
+from models import APP_CREDITS, APP_NAME, APP_TITLE, APP_VERSION
 from relatorios import RelatoriosWindow
 from rotinas import RotinasDocentesWindow
 from utils import DATA_DIR, center_window, ensure_directories, list_database_files, load_text_file, open_directory, set_text, show_error
@@ -29,7 +29,7 @@ class MainApplication(tk.Tk):
         self.current_user: dict | None = None
         self._multiple_db_warning_open = False
 
-        self.title(APP_NAME)
+        self.title(APP_TITLE)
         center_window(self, 1080, 720)
         self.minsize(980, 650)
         self._build_style()
@@ -132,7 +132,7 @@ class MainApplication(tk.Tk):
 
         header = ttk.Frame(root_frame)
         header.pack(fill="x", pady=(0, 12))
-        ttk.Label(header, text=APP_NAME, style="Title.TLabel").pack(anchor="w")
+        ttk.Label(header, text=APP_TITLE, style="Title.TLabel").pack(anchor="w")
         self.user_label = ttk.Label(header, text="Usuário não autenticado")
         self.user_label.pack(anchor="w", pady=(8, 0))
 
@@ -313,6 +313,7 @@ class MainApplication(tk.Tk):
         frame = ttk.Frame(window, padding=16)
         frame.pack(fill="both", expand=True)
         ttk.Label(frame, text=APP_NAME, style="Title.TLabel").pack(anchor="w")
+        ttk.Label(frame, text=f"Versão {APP_VERSION}").pack(anchor="w", pady=(6, 0))
         ttk.Label(frame, text=APP_CREDITS, justify="left").pack(anchor="w", pady=10)
         ttk.Label(
             frame,
