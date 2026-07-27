@@ -1,14 +1,14 @@
-# Manual do Usuário - Gestão de Registros CIEBP
+# Manual do Usuário - Gestão de Registros Pedagógicos
 
 ## Finalidade
 
-O sistema foi criado para registrar, consultar e analisar intercorrências diárias, ausências de professores e rotinas docentes em ambiente escolar/CIEBP, de forma totalmente local.
+O sistema foi criado para registrar, consultar e analisar intercorrências diárias, ausências de professores e rotinas docentes no contexto pedagógico escolar, de forma totalmente local.
 
 Créditos:
 
 Professor Júlio César Valera  
 Professor de Matemática, Programação e Robótica  
-CIEBP - Ribeirão Preto
+Registros Pedagógicos - Ribeirão Preto
 
 ## Como iniciar
 
@@ -52,7 +52,7 @@ Depois do acesso:
 
 - Cadastre nome completo, nome curto, área de atuação, vínculo e situação.
 - Não exclua professores antigos se eles fizerem parte do histórico.
-- Quando alguém deixar de atuar no CIEBP, altere apenas a situação para `inativo`, `afastado`, `removido` ou `contrato encerrado`.
+- Quando alguém deixar de atuar na unidade, altere apenas a situação para `inativo`, `afastado`, `removido` ou `contrato encerrado`.
 
 ### Espaços
 

@@ -1,8 +1,8 @@
-APP_NAME = "Gestão de Registros CIEBP"
+APP_NAME = "Gestão de Registros Pedagógicos"
 APP_CREDITS = (
     "Créditos: Professor Júlio César Valera\n"
     "Professor de Matemática, Programação e Robótica\n"
-    "CIEBP - Ribeirão Preto"
+    "Registros Pedagógicos - Ribeirão Preto"
 )
 
 PROFESSOR_SITUACOES = [
@@ -70,7 +70,7 @@ ESPACOS_INICIAIS = [
     ("Cultura Digital", "Espaço para atividades de cultura e cidadania digital."),
     ("Prototipagem e Fabricação Digital", "Espaço para prototipagem, impressão e fabricação digital."),
     ("Hub de Inovação", "Espaço de integração de projetos e inovação."),
-    (ESPACO_TODOS, "Use quando a intercorrência envolver todos os espaços do CIEBP."),
+    (ESPACO_TODOS, "Use quando a intercorrência envolver todos os espaços pedagógicos cadastrados."),
     ("Outros", "Utilize quando o registro não se enquadrar nos demais espaços."),
 ]
 
@@ -98,7 +98,7 @@ PROFESSORES_EXEMPLO = [
         "situacao": "ativo",
         "vinculo": "efetivo",
         "telefone_institucional": "",
-        "email_institucional": "exemplo1@ciebp.local",
+        "email_institucional": "exemplo1@pedagogico.local",
         "observacoes": "Cadastro fictício inicial para testes.",
     },
     {
@@ -108,7 +108,7 @@ PROFESSORES_EXEMPLO = [
         "situacao": "ativo",
         "vinculo": "temporário",
         "telefone_institucional": "",
-        "email_institucional": "exemplo2@ciebp.local",
+        "email_institucional": "exemplo2@pedagogico.local",
         "observacoes": "Cadastro fictício inicial para testes.",
     },
 ]

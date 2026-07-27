@@ -1,12 +1,12 @@
-# Gestão de Registros CIEBP
+# Gestão de Registros Pedagógicos
 
-Sistema local em Python 3 para registro, consulta, análise e emissão de relatórios sobre a rotina profissional no ambiente escolar/CIEBP.
+Sistema local em Python 3 para registro, consulta, análise e emissão de relatórios sobre a rotina profissional no contexto pedagógico escolar.
 
 Créditos:
 
 Professor Júlio César Valera  
 Professor de Matemática, Programação e Robótica  
-CIEBP - Ribeirão Preto
+Registros Pedagógicos - Ribeirão Preto
 
 ## Objetivo
 
@@ -115,7 +115,7 @@ O sistema permite cadastrar, editar, ativar e inativar professores.
 
 Importante:
 
-Não exclua definitivamente professores antigos, pois isso pode prejudicar o histórico. Quando alguém deixar de atuar no CIEBP, altere apenas a situação para `inativo`, `afastado`, `removido` ou `contrato encerrado`.
+Não exclua definitivamente professores antigos, pois isso pode prejudicar o histórico. Quando alguém deixar de atuar na unidade, altere apenas a situação para `inativo`, `afastado`, `removido` ou `contrato encerrado`.
 
 ### Espaços
 

@@ -83,7 +83,7 @@ class MainApplication(tk.Tk):
             frame,
             text=(
                 "Foram encontrados vários arquivos de banco na pasta 'data'.\n\n"
-                "O sistema usa o banco principal 'gestao_registros_ciebp.db', mas a existência de outros arquivos "
+                "O sistema usa apenas o banco principal do sistema, mas a existência de outros arquivos "
                 "pode indicar conflito de sincronização ou cópia duplicada."
             ),
             wraplength=570,
@@ -316,7 +316,7 @@ class MainApplication(tk.Tk):
             frame,
             text=(
                 "Sistema local em Python 3, SQLite e Tkinter para registro, consulta, análise, "
-                "relatórios e backup de intercorrências diárias no ambiente escolar/CIEBP."
+                "relatórios e backup de intercorrências diárias no contexto pedagógico escolar."
             ),
             wraplength=460,
             justify="left",
