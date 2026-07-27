@@ -339,13 +339,13 @@ class RotinaDocenteForm(tk.Toplevel):
         ttk.Button(professor_actions, text="Selecionar todos", command=self._select_all_professors).pack(side="left", padx=(0, 4))
         ttk.Button(professor_actions, text="Limpar seleção", command=self._clear_professor_selection).pack(side="left")
 
-        ttk.Label(frame, text="Categoria *").grid(row=4, column=0, sticky="w", pady=4)
-        self.category_combo = ttk.Combobox(frame, values=ROTINA_DOCENTE_CATEGORIAS, state="readonly", width=58)
-        self.category_combo.grid(row=4, column=1, sticky="ew", pady=4)
-
-        ttk.Label(frame, text="Contexto de atuação").grid(row=5, column=0, sticky="w", pady=4)
+        ttk.Label(frame, text="Contexto de atuação").grid(row=4, column=0, sticky="w", pady=4)
         self.context_combo = ttk.Combobox(frame, values=[""] + CONTEXTOS_ATUACAO, state="readonly", width=58)
-        self.context_combo.grid(row=5, column=1, sticky="ew", pady=4)
+        self.context_combo.grid(row=4, column=1, sticky="ew", pady=4)
+
+        ttk.Label(frame, text="Categoria *").grid(row=5, column=0, sticky="w", pady=4)
+        self.category_combo = ttk.Combobox(frame, values=ROTINA_DOCENTE_CATEGORIAS, state="readonly", width=58)
+        self.category_combo.grid(row=5, column=1, sticky="ew", pady=4)
 
         ttk.Label(frame, text="Espaço").grid(row=6, column=0, sticky="w", pady=4)
         self.space_combo = ttk.Combobox(frame, state="readonly", width=58)

@@ -2,7 +2,7 @@
 
 Sistema local em Python 3 para registrar, consultar, analisar e exportar informações da rotina pedagógica escolar de forma organizada, cronológica e profissional.
 
-Versão atual: `1.001`
+Versão atual: `1.002`
 
 Status desta versão:
 
@@ -32,6 +32,7 @@ O objetivo é facilitar a memória institucional, a consulta posterior, a produ�
 O projeto passa a adotar versionamento sequencial simples.
 
 - versão inicial formal: `1.001`
+- atualização da ordem dos campos no cadastro de rotina docente: `1.002`
 - a cada implementação, ajuste ou correção: somar `0.001`
 - exemplos futuros: `1.002`, `1.003`, `1.004`
 

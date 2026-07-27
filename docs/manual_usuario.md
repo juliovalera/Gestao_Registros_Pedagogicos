@@ -2,7 +2,7 @@
 
 Este manual apresenta um fluxo simples e acolhedor para uso diário do sistema em contextos pedagógicos.
 
-Versão atual do sistema: `1.001`
+Versão atual do sistema: `1.002`
 
 ## Finalidade
 
@@ -13,11 +13,13 @@ O sistema foi criado para registrar, consultar e analisar intercorrências diár
 O sistema passa a utilizar uma numeração sequencial simples de versão.
 
 - versão inicial formal: `1.001`
+- ajuste da ordem visual dos campos no cadastro de rotina docente: `1.002`
 - cada nova implementação ou correção acrescenta `0.001`
 
 Exemplo:
 
 - `1.001`
+- `1.002`
 - `1.002`
 - `1.003`
 
