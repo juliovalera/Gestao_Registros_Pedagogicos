@@ -3,7 +3,7 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import filedialog, ttk
 
-from models import NIVEIS_GRAVIDADE, ROTINA_DOCENTE_CATEGORIAS, TIPOS_AUSENCIA
+from models import CONTEXTOS_ATUACAO, NIVEIS_GRAVIDADE, ROTINA_DOCENTE_CATEGORIAS, TIPOS_AUSENCIA
 from utils import DateInput, EXPORT_DIR, center_window, current_timestamp, format_date_display, normalize_date, set_text, show_info
 
 try:
@@ -24,18 +24,13 @@ class ConsultasWindow(tk.Toplevel):
         self.title("Consultas e análise")
         center_window(self, 1260, 780)
 
-        self.notebook = ttk.Notebook(self)
-        self.notebook.pack(fill="both", expand=True, padx=10, pady=10)
+        notebook = ttk.Notebook(self)
+        notebook.pack(fill="both", expand=True, padx=10, pady=10)
 
-        self.inter_tab = IntercorrenciasConsultaTab(self.notebook, db)
-        self.aus_tab = AusenciasConsultaTab(self.notebook, db)
-        self.rotinas_tab = RotinasDocentesConsultaTab(self.notebook, db)
-        self.stats_tab = EstatisticasTab(self.notebook, db)
-
-        self.notebook.add(self.inter_tab, text="Intercorrências")
-        self.notebook.add(self.aus_tab, text="Ausências")
-        self.notebook.add(self.rotinas_tab, text="Rotinas docentes")
-        self.notebook.add(self.stats_tab, text="Resumo estatístico")
+        notebook.add(IntercorrenciasConsultaTab(notebook, db), text="Intercorrências")
+        notebook.add(AusenciasConsultaTab(notebook, db), text="Ausências")
+        notebook.add(RotinasDocentesConsultaTab(notebook, db), text="Rotinas docentes")
+        notebook.add(EstatisticasTab(notebook, db), text="Resumo estatístico")
 
 
 class BaseConsultaTab(ttk.Frame):
@@ -46,6 +41,7 @@ class BaseConsultaTab(ttk.Frame):
     def build_two_pane(self, columns: tuple[str, ...], headings: dict[str, str], widths: dict[str, int]) -> None:
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
+
         body = ttk.Frame(self)
         body.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
         body.columnconfigure(0, weight=3)
@@ -62,15 +58,17 @@ class BaseConsultaTab(ttk.Frame):
             self.tree.heading(column, text=headings[column])
             self.tree.column(column, width=widths[column], anchor="w")
         self.tree.grid(row=0, column=0, sticky="nsew")
-        scroll = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
-        scroll.grid(row=0, column=1, sticky="ns")
-        self.tree.configure(yscrollcommand=scroll.set)
         self.tree.bind("<<TreeviewSelect>>", lambda _event: self.show_details())
+
+        tree_scroll = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
+        tree_scroll.grid(row=0, column=1, sticky="ns")
+        self.tree.configure(yscrollcommand=tree_scroll.set)
 
         details_frame = ttk.LabelFrame(body, text="Detalhes")
         details_frame.grid(row=0, column=1, sticky="nsew")
         details_frame.columnconfigure(0, weight=1)
         details_frame.rowconfigure(0, weight=1)
+
         self.details_text = tk.Text(details_frame, wrap="word")
         self.details_text.grid(row=0, column=0, sticky="nsew")
         self.details_text.config(state="disabled")
@@ -113,14 +111,18 @@ class IntercorrenciasConsultaTab(BaseConsultaTab):
         self.type_combo.grid(row=1, column=5, padx=4, pady=4)
 
         ttk.Label(filters, text="Palavra-chave").grid(row=2, column=0, padx=4, pady=4, sticky="w")
-        self.keyword_entry = ttk.Entry(filters, width=32)
+        self.keyword_entry = ttk.Entry(filters, width=30)
         self.keyword_entry.grid(row=2, column=1, padx=4, pady=4)
         ttk.Label(filters, text="Tags").grid(row=2, column=2, padx=4, pady=4, sticky="w")
-        self.tags_entry = ttk.Entry(filters, width=24)
+        self.tags_entry = ttk.Entry(filters, width=22)
         self.tags_entry.grid(row=2, column=3, padx=4, pady=4)
         ttk.Label(filters, text="Gravidade mínima").grid(row=2, column=4, padx=4, pady=4, sticky="w")
         self.gravidade_combo = ttk.Combobox(filters, values=[""] + NIVEIS_GRAVIDADE, state="readonly", width=28)
         self.gravidade_combo.grid(row=2, column=5, padx=4, pady=4)
+
+        ttk.Label(filters, text="Contexto").grid(row=3, column=0, padx=4, pady=4, sticky="w")
+        self.context_combo = ttk.Combobox(filters, values=[""] + CONTEXTOS_ATUACAO, state="readonly", width=28)
+        self.context_combo.grid(row=3, column=1, padx=4, pady=4)
 
         ttk.Button(filters, text="Pesquisar", command=self.search).grid(row=3, column=4, padx=4, pady=4)
         ttk.Button(filters, text="Limpar", command=self.clear).grid(row=3, column=5, padx=4, pady=4)
@@ -133,7 +135,7 @@ class IntercorrenciasConsultaTab(BaseConsultaTab):
                 "hora": "Hora",
                 "tipo": "Tipo",
                 "espaco": "Espaço",
-                "professor": "Professores",
+                "professor": "Professor",
                 "gravidade": "Gravidade",
             },
             {"id": 60, "data": 90, "hora": 80, "tipo": 220, "espaco": 170, "professor": 180, "gravidade": 100},
@@ -144,16 +146,19 @@ class IntercorrenciasConsultaTab(BaseConsultaTab):
         self.professor_map = {"": None}
         self.space_map = {"": None}
         self.type_map = {"": None}
+
         professor_values = [""]
         for record in refs["professores"]:
             professor_values.append(record["nome_completo"])
             self.professor_map[record["nome_completo"]] = record["id"]
         self.professor_combo["values"] = professor_values
+
         space_values = [""]
         for record in refs["espacos"]:
             space_values.append(record["nome"])
             self.space_map[record["nome"]] = record["id"]
         self.space_combo["values"] = space_values
+
         type_values = [""]
         for record in refs["tipos_ocorrencia"]:
             type_values.append(record["nome"])
@@ -174,6 +179,8 @@ class IntercorrenciasConsultaTab(BaseConsultaTab):
             filters["espaco_id"] = self.space_map.get(self.space_combo.get())
         if self.type_combo.get():
             filters["tipo_ocorrencia_id"] = self.type_map.get(self.type_combo.get())
+        if self.context_combo.get():
+            filters["contexto_atuacao"] = self.context_combo.get()
         if self.keyword_entry.get().strip():
             filters["keyword"] = self.keyword_entry.get().strip()
         if self.tags_entry.get().strip():
@@ -219,6 +226,7 @@ class IntercorrenciasConsultaTab(BaseConsultaTab):
                 f"Hora: {record['hora']}\n"
                 f"Tipo: {record['tipo_nome']}\n"
                 f"Espaço: {record['espaco_nome']}\n"
+                f"Contexto de atuação: {record.get('contexto_atuacao') or '-'}\n"
                 f"Professor: {record.get('professor_nome') or '-'}\n"
                 f"Descrição:\n{record['descricao_objetiva']}\n\n"
                 f"Providências:\n{record.get('providencias_adotadas') or '-'}\n\n"
@@ -230,7 +238,7 @@ class IntercorrenciasConsultaTab(BaseConsultaTab):
     def clear(self) -> None:
         for entry in (self.specific_entry, self.start_entry, self.end_entry, self.keyword_entry, self.tags_entry):
             entry.delete(0, tk.END)
-        for combo in (self.professor_combo, self.space_combo, self.type_combo, self.gravidade_combo):
+        for combo in (self.professor_combo, self.space_combo, self.type_combo, self.gravidade_combo, self.context_combo):
             combo.set("")
         self.search()
 
@@ -273,8 +281,12 @@ class AusenciasConsultaTab(BaseConsultaTab):
         ttk.Label(filters, text="Palavra-chave").grid(row=2, column=0, padx=4, pady=4, sticky="w")
         self.keyword_entry = ttk.Entry(filters, width=40)
         self.keyword_entry.grid(row=2, column=1, columnspan=3, padx=4, pady=4)
-        ttk.Button(filters, text="Pesquisar", command=self.search).grid(row=2, column=4, padx=4, pady=4)
-        ttk.Button(filters, text="Limpar", command=self.clear).grid(row=2, column=5, padx=4, pady=4)
+        ttk.Label(filters, text="Contexto").grid(row=2, column=4, padx=4, pady=4, sticky="w")
+        self.context_combo = ttk.Combobox(filters, values=[""] + CONTEXTOS_ATUACAO, state="readonly", width=28)
+        self.context_combo.grid(row=2, column=5, padx=4, pady=4)
+
+        ttk.Button(filters, text="Pesquisar", command=self.search).grid(row=3, column=4, padx=4, pady=4)
+        ttk.Button(filters, text="Limpar", command=self.clear).grid(row=3, column=5, padx=4, pady=4)
 
         self.build_two_pane(
             self.columns,
@@ -286,11 +298,13 @@ class AusenciasConsultaTab(BaseConsultaTab):
         refs = self.db.get_active_reference_data()
         self.professor_map = {"": None}
         self.space_map = {"": None}
+
         values = [""]
         for record in refs["professores"]:
             values.append(record["nome_completo"])
             self.professor_map[record["nome_completo"]] = record["id"]
         self.professor_combo["values"] = values
+
         space_values = [""]
         for record in refs["espacos"]:
             space_values.append(record["nome"])
@@ -311,6 +325,8 @@ class AusenciasConsultaTab(BaseConsultaTab):
             filters["espaco_id"] = self.space_map.get(self.space_combo.get())
         if self.type_combo.get():
             filters["tipo_ausencia"] = self.type_combo.get()
+        if self.context_combo.get():
+            filters["contexto_atuacao"] = self.context_combo.get()
         if self.keyword_entry.get().strip():
             filters["keyword"] = self.keyword_entry.get().strip()
         return filters
@@ -355,6 +371,7 @@ class AusenciasConsultaTab(BaseConsultaTab):
                 f"Horário: {horario}\n"
                 f"Professores: {record['professor_nome']}\n"
                 f"Espaço: {record['espaco_nome']}\n"
+                f"Contexto de atuação: {record.get('contexto_atuacao') or '-'}\n"
                 f"Tipo: {record['tipo_ausencia']}\n"
                 f"Comunicação prévia: {record.get('havia_comunicacao_previa') or '-'}\n"
                 f"Substituição: {record.get('houve_substituicao') or '-'}\n\n"
@@ -367,7 +384,7 @@ class AusenciasConsultaTab(BaseConsultaTab):
     def clear(self) -> None:
         for entry in (self.specific_entry, self.start_entry, self.end_entry, self.keyword_entry):
             entry.delete(0, tk.END)
-        for combo in (self.professor_combo, self.space_combo, self.type_combo):
+        for combo in (self.professor_combo, self.space_combo, self.type_combo, self.context_combo):
             combo.set("")
         self.search()
 
@@ -414,6 +431,10 @@ class RotinasDocentesConsultaTab(BaseConsultaTab):
         self.tags_entry = ttk.Entry(filters, width=28)
         self.tags_entry.grid(row=2, column=5, padx=4, pady=4)
 
+        ttk.Label(filters, text="Contexto").grid(row=3, column=0, padx=4, pady=4, sticky="w")
+        self.context_combo = ttk.Combobox(filters, values=[""] + CONTEXTOS_ATUACAO, state="readonly", width=28)
+        self.context_combo.grid(row=3, column=1, padx=4, pady=4)
+
         ttk.Button(filters, text="Pesquisar", command=self.search).grid(row=3, column=4, padx=4, pady=4)
         ttk.Button(filters, text="Limpar", command=self.clear).grid(row=3, column=5, padx=4, pady=4)
 
@@ -435,11 +456,13 @@ class RotinasDocentesConsultaTab(BaseConsultaTab):
         refs = self.db.get_active_reference_data()
         self.professor_map = {"": None}
         self.space_map = {"": None}
+
         professor_values = [""]
         for record in refs["professores"]:
             professor_values.append(record["nome_completo"])
             self.professor_map[record["nome_completo"]] = record["id"]
         self.professor_combo["values"] = professor_values
+
         space_values = [""]
         for record in refs["espacos"]:
             space_values.append(record["nome"])
@@ -460,6 +483,8 @@ class RotinasDocentesConsultaTab(BaseConsultaTab):
             filters["espaco_id"] = self.space_map.get(self.space_combo.get())
         if self.category_combo.get():
             filters["categoria"] = self.category_combo.get()
+        if self.context_combo.get():
+            filters["contexto_atuacao"] = self.context_combo.get()
         if self.keyword_entry.get().strip():
             filters["keyword"] = self.keyword_entry.get().strip()
         if self.tags_entry.get().strip():
@@ -503,6 +528,7 @@ class RotinasDocentesConsultaTab(BaseConsultaTab):
                 f"Horário: {record.get('hora_inicio') or '-'} até {record.get('hora_fim') or '-'}\n"
                 f"Professores: {record['professor_nome']}\n"
                 f"Categoria: {record['categoria']}\n"
+                f"Contexto de atuação: {record.get('contexto_atuacao') or '-'}\n"
                 f"Espaço: {record.get('espaco_nome') or '-'}\n"
                 f"Turma ou público: {record.get('turma_ou_publico') or '-'}\n"
                 f"Título: {record['titulo']}\n"
@@ -518,7 +544,7 @@ class RotinasDocentesConsultaTab(BaseConsultaTab):
     def clear(self) -> None:
         for entry in (self.specific_entry, self.start_entry, self.end_entry, self.keyword_entry, self.tags_entry):
             entry.delete(0, tk.END)
-        for combo in (self.professor_combo, self.space_combo, self.category_combo):
+        for combo in (self.professor_combo, self.space_combo, self.category_combo, self.context_combo):
             combo.set("")
         self.search()
 
@@ -531,6 +557,7 @@ class EstatisticasTab(ttk.Frame):
         ("Ausências por professor", "ausencias_por_professor", "#b26b00"),
         ("Rotinas por categoria", "rotinas_por_categoria", "#7a3eb1"),
         ("Registros por gravidade", "por_gravidade", "#b13e57"),
+        ("Registros por contexto", "por_contexto", "#4c8c2b"),
     ]
 
     def __init__(self, parent: ttk.Notebook, db) -> None:
@@ -546,6 +573,7 @@ class EstatisticasTab(ttk.Frame):
     def _build(self) -> None:
         filters = ttk.LabelFrame(self, text="Período")
         filters.pack(fill="x", padx=10, pady=10)
+
         ttk.Label(filters, text="Data inicial").grid(row=0, column=0, padx=4, pady=4, sticky="w")
         self.start_entry = DateInput(filters, width=14)
         self.start_entry.grid(row=0, column=1, padx=4, pady=4)
@@ -589,10 +617,9 @@ class EstatisticasTab(ttk.Frame):
         self.export_chart_button = ttk.Button(chart_controls, text="Exportar gráfico PNG", command=self.export_chart_png)
         self.export_chart_button.grid(row=0, column=2, padx=(8, 0), pady=4, sticky="e")
 
-        ttk.Label(
-            chart_controls,
-            text="Os gráficos usam os mesmos filtros do resumo estatístico.",
-        ).grid(row=1, column=0, columnspan=3, padx=4, pady=(0, 2), sticky="w")
+        ttk.Label(chart_controls, text="Os gráficos usam os mesmos filtros do resumo estatístico.").grid(
+            row=1, column=0, columnspan=3, padx=4, pady=(0, 2), sticky="w"
+        )
 
         self.chart_host = ttk.Frame(chart_frame)
         self.chart_host.grid(row=1, column=0, sticky="nsew", padx=6, pady=(0, 6))
@@ -625,7 +652,9 @@ class EstatisticasTab(ttk.Frame):
             "Quantidade por categoria de rotina docente:\n"
             f"{render_items(stats['rotinas_por_categoria'])}\n\n"
             "Quantidade de registros por nível de gravidade:\n"
-            f"{render_items(stats['por_gravidade'])}"
+            f"{render_items(stats['por_gravidade'])}\n\n"
+            "Quantidade de registros por contexto de atuação:\n"
+            f"{render_items(stats['por_contexto'])}"
         )
         set_text(self.text, text)
         self.render_chart()

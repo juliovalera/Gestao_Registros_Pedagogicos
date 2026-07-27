@@ -1,45 +1,50 @@
 # Gestão de Registros Pedagógicos
 
-Sistema local em Python 3 para registro, consulta, análise e emissão de relatórios sobre a rotina profissional no contexto pedagógico escolar.
+Sistema local em Python 3 para registrar, consultar, analisar e exportar informações da rotina pedagógica escolar de forma organizada, cronológica e profissional.
 
-Créditos:
+## Visão geral
+
+O projeto foi pensado para apoiar o trabalho de professores, coordenação e equipes pedagógicas no acompanhamento do dia a dia escolar.
+
+Com ele, é possível registrar:
+
+- rotina docente
+- diário de classe
+- planejamento de aula
+- estudos e formações
+- atendimentos pedagógicos
+- ausências e atrasos
+- orientações recebidas
+- encaminhamentos realizados
+- intercorrências e situações relevantes da rotina
+
+O objetivo é facilitar a memória institucional, a consulta posterior, a produção de relatórios e a análise de dados de maneira simples e totalmente local.
+
+## Créditos
 
 Professor Júlio César Valera  
 Professor de Matemática, Programação e Robótica  
-Registros Pedagógicos - Ribeirão Preto
+Ribeirão Preto
 
-## Objetivo
+## Principais recursos
 
-O sistema foi pensado para registrar fatos objetivos do cotidiano profissional, como:
-
-- intercorrências diárias
-- ausências de professores
-- atrasos e saídas antecipadas
-- falta de apoio em aula
-- problemas de convivência
-- providências e encaminhamentos
-- rotina docente, diário de classe, estudos, planejamento de aula e demais atividades do professor
-
-O foco é manter um histórico organizado, pesquisável e cronológico para consulta futura, análise do ambiente de trabalho e emissão de relatórios para acompanhamento e coordenação.
-
-## Características
-
-- funcionamento totalmente local
-- sem dependência de internet
-- banco de dados local SQLite
-- interface gráfica simples em Tkinter
+- funcionamento totalmente local, sem depender de internet
+- banco de dados SQLite criado automaticamente na primeira execução
+- interface gráfica em Tkinter
 - acesso protegido por usuário e senha
 - compatível com Windows e Linux
-- criação automática do banco na primeira execução
-- relatórios em TXT, CSV e PDF
-- gráficos estatísticos locais na área de consultas
-- exportação de gráfico em PNG
+- cadastro de professores, espaços e tipos de registro
+- módulo de intercorrências
+- módulo de ausências de professores
+- módulo de rotinas docentes
+- consultas com filtros combinados
+- relatórios do dia, por período, por professor e por espaço
+- relatórios em formato de ata
+- exportação em TXT, CSV e PDF
+- resumo estatístico com gráficos locais
+- exportação de gráficos em PNG
 - backup e restauração do banco local
-- campos de data com formatação automática e seletor de calendário
-- campos de hora com formatação automática no padrão `HH:MM`
-- cadastro de ausência com opção de marcar ausência integral
-- anexo opcional de evidências por imagem em intercorrências e rotinas docentes
-- colagem de print diretamente da área de transferência quando `Pillow` estiver instalado
+- anexos opcionais de evidências por imagem em intercorrências e rotinas docentes
 
 ## Estrutura do projeto
 
@@ -63,9 +68,11 @@ backups/
 exports/
 ```
 
-## Instalação
+## Requisitos
 
-Use Python 3.
+- Python 3
+
+## Instalação
 
 Instale as dependências com:
 
@@ -73,7 +80,7 @@ Instale as dependências com:
 pip install -r requirements.txt
 ```
 
-## Execução
+## Como executar
 
 Abra o terminal na pasta do projeto e execute:
 
@@ -81,16 +88,19 @@ Abra o terminal na pasta do projeto e execute:
 python main.py
 ```
 
-O banco de dados SQLite será criado automaticamente na primeira execução.
+Na primeira execução, o sistema cria automaticamente o banco de dados local.
 
-## Primeiro acesso e segurança
+## Primeiro acesso
 
-Na primeira abertura do sistema, será necessário criar um usuário local e uma senha de acesso.
+No primeiro uso, o sistema solicitará a criação de um usuário e uma senha.
 
-- esse login é exigido antes de abrir a tela principal
-- a senha não fica salva em texto puro no banco
-- a troca de senha pode ser feita pelo menu `Segurança`
-- para reduzir risco de acesso indevido, mantenha a senha em local seguro e não a compartilhe
+Isso permite restringir o acesso aos registros e proteger informações de uso interno.
+
+Recursos de segurança disponíveis:
+
+- login obrigatório antes da tela principal
+- senha armazenada de forma protegida
+- troca de senha pelo menu `Segurança`
 
 ## Módulos disponíveis
 
@@ -109,71 +119,47 @@ Na primeira abertura do sistema, será necessário criar um usuário local e uma
 
 ## Cadastros básicos
 
-### Professores
+O sistema possui cadastros para:
 
-O sistema permite cadastrar, editar, ativar e inativar professores.
+- professores
+- espaços
+- tipos de ocorrência
 
-Importante:
-
-Não exclua definitivamente professores antigos, pois isso pode prejudicar o histórico. Quando alguém deixar de atuar na unidade, altere apenas a situação para `inativo`, `afastado`, `removido` ou `contrato encerrado`.
-
-### Espaços
-
-São criados automaticamente exemplos iniciais:
-
-- Programação Descomplicada
-- Robótica
-- Cultura Maker
-- Cultura Digital
-- Prototipagem e Fabricação Digital
-- Hub de Inovação
-- Outros
-
-### Tipos de ocorrência
-
-São criados automaticamente exemplos iniciais:
-
-- Ausência de professor
-- Atraso
-- Saída antecipada
-- Falta de apoio em aula
-- Conflito entre estudantes
-- Conflito entre servidor e estudante
-- Problema de convivência
-- Problema estrutural
-- Problema técnico
-- Orientação recebida
-- Encaminhamento à gestão
-- Registro preventivo
-- Outro
+Os registros históricos são preservados. Por isso, o ideal é manter professores e referências antigas inativados quando necessário, em vez de removê-los definitivamente.
 
 ## Rotina docente
 
-O módulo `Rotina docente` permite registrar atividades profissionais do professor, como:
+O módulo `Rotina docente` foi criado para acompanhar o trabalho profissional diário do professor e da equipe pedagógica.
+
+Exemplos de uso:
 
 - diário de classe
 - planejamento de aula
+- planejamento coletivo
 - estudo e formação
-- preparação de material
-- correção e avaliação
+- mentoria
+- programação
+- acompanhamento pedagógico
 - atendimento a estudantes
 - atendimento a famílias
+- atendimento a professores
+- atendimento a público interno
 - reuniões pedagógicas
-- projetos, oficinas e laboratório
 - registros administrativos
 
 Campos principais:
 
 - data
-- professor
+- professor ou professores
 - categoria
 - título
 - descrição da atividade
 
 Campos complementares:
 
-- horário inicial e final
+- hora de início e hora de fim
 - espaço
+- contexto de atuação
 - turma ou público
 - objetivos
 - recursos utilizados
@@ -182,59 +168,84 @@ Campos complementares:
 - observações
 - evidências em imagem, quando necessário
 
-Esses registros também entram nas consultas combinadas, no resumo estatístico e nos relatórios exportáveis.
+## Intercorrências e ausências
+
+Além da rotina docente, o sistema também permite registrar fatos objetivos relacionados ao funcionamento pedagógico diário, como:
+
+- ausências
+- atrasos
+- saídas antecipadas
+- falta de apoio em aula
+- orientações e encaminhamentos
+- situações de convivência
+- registros preventivos
+- ocorrências técnicas, estruturais ou administrativas
+
+Esses registros podem ser consultados depois com filtros combinados e incluídos em relatórios.
+
+## Consultas e análise
+
+O módulo `Consultar registros` permite combinar filtros para localizar informações com rapidez.
+
+Exemplos:
+
+- professor + período
+- espaço + período
+- categoria + período
+- tipo de ocorrência + período
+- palavra-chave + período
+- contexto de atuação + período
+
+Também há um resumo estatístico com contagens e gráficos locais, incluindo:
+
+- quantidade de intercorrências por período
+- quantidade por tipo de ocorrência
+- quantidade por espaço
+- quantidade de ausências por professor
+- quantidade de registros por nível de gravidade
+- quantidade de registros por contexto de atuação
+
+## Relatórios
+
+O sistema pode gerar:
+
+- relatório do dia
+- relatório por período
+- relatório por professor
+- relatório por espaço
+- relatório em formato de ata
+- ata por período
+
+Os relatórios podem combinar:
+
+- intercorrências
+- ausências
+- rotinas docentes
+
+Também é possível controlar como as evidências aparecem:
+
+- ocultar totalmente
+- mostrar apenas a quantidade
+- mostrar quantidade e nomes dos arquivos
 
 ## Evidências por imagem
 
-Os módulos de `Intercorrências` e `Rotina docente` permitem anexar evidências em imagem de forma opcional.
+Nos módulos de `Intercorrências` e `Rotina docente`, é possível anexar imagens de forma opcional.
 
 Você pode:
 
 - adicionar arquivos de imagem ao registro
-- colar um print diretamente da área de transferência
-- manter essas evidências dentro do próprio banco local SQLite
+- colar um print da área de transferência, quando `Pillow` estiver instalado
+- gerar um PDF específico de evidências a partir dos filtros utilizados
 
-No módulo de relatórios, o botão `Evidências PDF` gera um arquivo próprio para impressão, relacionando cada registro às imagens anexadas.
+## Datas e horas
 
-Esse relatório usa os filtros atuais de data, professor e espaço quando informados.
+O sistema possui apoio para preenchimento mais rápido:
 
-## Dados fictícios iniciais
-
-O sistema cria alguns dados fictícios de exemplo apenas na primeira inicialização do banco, para facilitar testes. Esses registros podem ser editados, inativados ou excluídos depois, sem serem recriados automaticamente.
-
-## Orientações éticas, privacidade e LGPD
-
-O sistema deve ser usado para registros objetivos, profissionais e cronológicos.
-
-Os registros devem evitar:
-
-- acusações
-- julgamentos pessoais
-- diagnósticos médicos
-- exposição desnecessária de dados sensíveis
-- identificação completa de crianças ou adolescentes
-
-Quando envolver estudantes, prefira:
-
-- iniciais
-- turma
-- identificação genérica, como `estudante A`, `grupo do 9º ano` ou `turma visitante`
-
-Registre fatos observáveis:
-
-- data
-- horário
-- local
-- pessoas relacionadas
-- o que ocorreu
-- quem presenciou
-- qual providência foi adotada
-
-Evite termos acusatórios. Exemplo:
-
-Em vez de `fraudou o ponto`, prefira:
-
-`não compareceu ao espaço no horário previsto, conforme observado, e a situação foi comunicada à coordenação`
+- campos de data com formatação automática
+- botão de calendário
+- destaque para a data atual no calendário
+- campos de hora com formatação automática no padrão `HH:MM`
 
 ## Exportação
 
@@ -242,27 +253,75 @@ Os relatórios podem ser exportados em:
 
 - TXT
 - CSV
-- PDF, se a biblioteca `reportlab` estiver instalada
+- PDF, quando a biblioteca `reportlab` estiver instalada
 
-Para colar prints diretamente da área de transferência, mantenha também a biblioteca `Pillow` instalada.
+Recursos adicionais:
 
-Para exibir os gráficos na aba `Resumo estatístico`, mantenha também a biblioteca `matplotlib` instalada.
-
-Na aba `Resumo estatístico`, o sistema pode mostrar gráficos de barras e gráfico de evolução diária, além de permitir exportar o gráfico atual em formato `PNG`.
-
-Os relatórios podem incluir intercorrências, ausências e rotinas docentes, conforme o filtro selecionado.
+- gráficos podem ser exportados em PNG
+- nomes dos arquivos exportados incluem data e hora para evitar sobrescrita
+- há botão para abrir a pasta de exportação diretamente pela interface
 
 ## Backup
 
 O módulo de backup permite:
 
-- criar cópia local do banco de dados
-- salvar cópia em outro local
-- restaurar uma cópia de backup existente
+- criar backup automático na pasta local do projeto
+- salvar uma cópia em outro local
+- restaurar um backup existente
+- abrir rapidamente a pasta onde os backups ficam armazenados
 
-Importante:
+Como o sistema é local, o backup preserva também:
 
-O backup copia também a base local de autenticação e as evidências em imagem, pois tudo fica armazenado no banco local. Portanto, quem restaurar um backup antigo voltará também aos usuários, senhas e anexos daquele momento.
+- usuários cadastrados
+- registros
+- evidências em imagem
+
+## Dados iniciais de exemplo
+
+Na primeira inicialização do banco, o sistema pode criar alguns dados fictícios para facilitar testes.
+
+Esses registros podem ser:
+
+- editados
+- inativados
+- excluídos
+
+Eles não são recriados automaticamente depois.
+
+## Boas práticas de uso
+
+O sistema foi pensado para registros:
+
+- objetivos
+- profissionais
+- cronológicos
+- úteis para acompanhamento pedagógico
+
+Sempre que possível, prefira registrar:
+
+- data e horário
+- local
+- pessoas relacionadas
+- descrição observável do fato
+- providências ou encaminhamentos adotados
+
+Quando houver participação de estudantes, é recomendável usar identificação pedagógica mais discreta, como:
+
+- iniciais
+- turma
+- grupo
+- identificação genérica
+
+## Privacidade e cuidado com a escrita
+
+Como o sistema pode armazenar informações sensíveis de rotina profissional, recomenda-se:
+
+- evitar exposição desnecessária de dados pessoais
+- evitar julgamentos ou conclusões precipitadas
+- priorizar linguagem objetiva
+- manter foco em fatos, ações e encaminhamentos
+
+Isso ajuda a preservar a utilidade do histórico e melhora a qualidade dos relatórios produzidos.
 
 ## Executável futuro com PyInstaller
 
@@ -278,3 +337,7 @@ pyinstaller --onefile --windowed main.py
 O manual está disponível em:
 
 `docs/manual_usuario.md`
+
+## Licença
+
+Este projeto está licenciado sob a licença MIT.

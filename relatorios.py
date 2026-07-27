@@ -9,6 +9,7 @@ import sys
 import tkinter as tk
 from tkinter import filedialog, ttk
 
+from models import CONTEXTOS_ATUACAO
 from utils import (
     DateInput,
     EXPORT_DIR,
@@ -50,6 +51,7 @@ class RelatoriosWindow(tk.Toplevel):
         "tipo",
         "espaco",
         "professor",
+        "contexto",
         "descricao",
         "providencias",
         "encaminhamento",
@@ -81,13 +83,13 @@ class RelatoriosWindow(tk.Toplevel):
         main_frame.columnconfigure(0, weight=1)
         main_frame.rowconfigure(1, weight=1)
 
-        controls = ttk.LabelFrame(main_frame, text="Configuração do relatório")
+        controls = ttk.LabelFrame(main_frame, text="Configura??o do relat?rio")
         controls.grid(row=0, column=0, sticky="ew", pady=(0, 10))
         controls.columnconfigure(1, weight=1)
         controls.columnconfigure(3, weight=1)
         controls.columnconfigure(5, weight=1)
 
-        ttk.Label(controls, text="Data do relatório").grid(row=0, column=0, padx=4, pady=4, sticky="w")
+        ttk.Label(controls, text="Data do relat?rio").grid(row=0, column=0, padx=4, pady=4, sticky="w")
         self.day_entry = DateInput(controls, width=14)
         self.day_entry.grid(row=0, column=1, padx=4, pady=4)
 
@@ -103,67 +105,71 @@ class RelatoriosWindow(tk.Toplevel):
         self.professor_combo = ttk.Combobox(controls, state="readonly", width=28)
         self.professor_combo.grid(row=1, column=1, columnspan=2, padx=4, pady=4, sticky="ew")
 
-        ttk.Label(controls, text="Espaço").grid(row=1, column=3, padx=4, pady=4, sticky="w")
+        ttk.Label(controls, text="Espa?o").grid(row=1, column=3, padx=4, pady=4, sticky="w")
         self.space_combo = ttk.Combobox(controls, state="readonly", width=28)
         self.space_combo.grid(row=1, column=4, columnspan=2, padx=4, pady=4, sticky="ew")
 
-        ttk.Label(controls, text="Evidências no relatório").grid(row=2, column=0, padx=4, pady=4, sticky="w")
+        ttk.Label(controls, text="Contexto").grid(row=2, column=0, padx=4, pady=4, sticky="w")
+        self.context_combo = ttk.Combobox(controls, state="readonly", values=[""] + CONTEXTOS_ATUACAO, width=28)
+        self.context_combo.grid(row=2, column=1, columnspan=2, padx=4, pady=4, sticky="ew")
+
+        ttk.Label(controls, text="Evid?ncias no relat?rio").grid(row=2, column=3, padx=4, pady=4, sticky="w")
         self.period_evidence_combo = ttk.Combobox(
             controls,
             state="readonly",
             values=list(self.PERIOD_EVIDENCE_OPTIONS.keys()),
             width=28,
         )
-        self.period_evidence_combo.grid(row=2, column=1, columnspan=2, padx=4, pady=4, sticky="ew")
+        self.period_evidence_combo.grid(row=2, column=4, columnspan=2, padx=4, pady=4, sticky="ew")
         self.period_evidence_combo.set("Ocultar totalmente")
 
-        ttk.Label(controls, text="Formato da ata").grid(row=2, column=3, padx=4, pady=4, sticky="w")
+        ttk.Label(controls, text="Formato da ata").grid(row=3, column=0, padx=4, pady=4, sticky="w")
         self.ata_break_combo = ttk.Combobox(
             controls,
             state="readonly",
             values=list(self.ATA_BREAK_OPTIONS.keys()),
             width=28,
         )
-        self.ata_break_combo.grid(row=2, column=4, columnspan=2, padx=4, pady=4, sticky="ew")
+        self.ata_break_combo.grid(row=3, column=1, columnspan=2, padx=4, pady=4, sticky="ew")
         self.ata_break_combo.set("Quebrar por data")
 
         report_actions = ttk.Frame(controls)
-        report_actions.grid(row=3, column=0, columnspan=6, sticky="w", padx=4, pady=4)
-        ttk.Button(report_actions, text="Relatório do dia", command=self.generate_day_report).pack(side="left", padx=4)
-        ttk.Button(report_actions, text="Relatório por período", command=self.generate_period_report).pack(side="left", padx=4)
-        ttk.Button(report_actions, text="Relatório por professor", command=self.generate_professor_report).pack(side="left", padx=4)
-        ttk.Button(report_actions, text="Relatório por espaço", command=self.generate_space_report).pack(side="left", padx=4)
-        ttk.Button(report_actions, text="Relatório em ata", command=self.generate_minutes_report).pack(side="left", padx=4)
-        ttk.Button(report_actions, text="Ata por período", command=self.generate_period_minutes_report).pack(side="left", padx=4)
+        report_actions.grid(row=4, column=0, columnspan=6, sticky="w", padx=4, pady=4)
+        ttk.Button(report_actions, text="Relat?rio do dia", command=self.generate_day_report).pack(side="left", padx=4)
+        ttk.Button(report_actions, text="Relat?rio por per?odo", command=self.generate_period_report).pack(side="left", padx=4)
+        ttk.Button(report_actions, text="Relat?rio por professor", command=self.generate_professor_report).pack(side="left", padx=4)
+        ttk.Button(report_actions, text="Relat?rio por espa?o", command=self.generate_space_report).pack(side="left", padx=4)
+        ttk.Button(report_actions, text="Relat?rio em ata", command=self.generate_minutes_report).pack(side="left", padx=4)
+        ttk.Button(report_actions, text="Ata por per?odo", command=self.generate_period_minutes_report).pack(side="left", padx=4)
 
         export_actions = ttk.Frame(controls)
-        export_actions.grid(row=4, column=0, columnspan=6, sticky="w", padx=4, pady=(0, 4))
+        export_actions.grid(row=5, column=0, columnspan=6, sticky="w", padx=4, pady=(0, 4))
         ttk.Button(export_actions, text="Exportar TXT", command=self.export_txt).pack(side="left", padx=4)
         ttk.Button(export_actions, text="Exportar CSV", command=self.export_csv).pack(side="left", padx=4)
 
         self.pdf_button = ttk.Button(export_actions, text="Exportar PDF", command=self.export_pdf)
         self.pdf_button.pack(side="left", padx=4)
 
-        self.evidence_pdf_button = ttk.Button(export_actions, text="Evidências PDF", command=self.export_evidence_pdf)
+        self.evidence_pdf_button = ttk.Button(export_actions, text="Evid?ncias PDF", command=self.export_evidence_pdf)
         self.evidence_pdf_button.pack(side="left", padx=4)
 
         ttk.Button(export_actions, text="Abrir pasta exportada", command=self.open_export_folder).pack(side="left", padx=4)
 
         ttk.Label(
             controls,
-            text="Dica: Professor e Espaço em branco = todos. Exceções: relatório por professor exige professor e relatório por espaço exige espaço.",
-        ).grid(row=5, column=0, columnspan=6, sticky="w", padx=4, pady=(2, 0))
+            text="Dica: Professor, Espa?o e Contexto em branco = todos. Exce??es: relat?rio por professor exige professor e relat?rio por espa?o exige espa?o.",
+        ).grid(row=6, column=0, columnspan=6, sticky="w", padx=4, pady=(2, 0))
 
         if not self.pdf_available:
             self.pdf_button.config(text="Exportar PDF (instale reportlab)", state="disabled")
-            self.evidence_pdf_button.config(text="Evidências PDF (instale reportlab)", state="disabled")
+            self.evidence_pdf_button.config(text="Evid?ncias PDF (instale reportlab)", state="disabled")
             ttk.Label(
                 controls,
-                text="PDF indisponível neste Python. Instale com: pip install reportlab",
+                text="PDF indispon?vel neste Python. Instale com: pip install reportlab",
                 foreground="#8a5a00",
-            ).grid(row=6, column=0, columnspan=6, sticky="w", padx=4, pady=(4, 0))
+            ).grid(row=7, column=0, columnspan=6, sticky="w", padx=4, pady=(4, 0))
 
-        preview_frame = ttk.LabelFrame(main_frame, text="Pré-visualização")
+        preview_frame = ttk.LabelFrame(main_frame, text="Pr?-visualiza??o")
         preview_frame.grid(row=1, column=0, sticky="nsew")
         preview_frame.columnconfigure(0, weight=1)
         preview_frame.rowconfigure(0, weight=1)
@@ -187,6 +193,7 @@ class RelatoriosWindow(tk.Toplevel):
             space_values.append(record["nome"])
             self.space_map[record["nome"]] = record["id"]
         self.space_combo["values"] = space_values
+        self.context_combo["values"] = [""] + CONTEXTOS_ATUACAO
 
         self.day_entry.insert(0, format_date_display(current_date_iso()))
 
@@ -236,43 +243,45 @@ class RelatoriosWindow(tk.Toplevel):
         full_record = self._get_intercorrencia_with_evidences(record)
         evidencias = full_record.get("evidencias") or []
         parts = [
-            f"registra-se intercorrência classificada como {record['tipo_nome']}, no espaço {record['espaco_nome']}",
-            f"descrição objetiva: {record['descricao_objetiva']}",
+            f"registra-se intercorr?ncia classificada como {record['tipo_nome']}, no espa?o {record['espaco_nome']}",
+            f"descri??o objetiva: {record['descricao_objetiva']}",
         ]
+        self._append_minutes_part(parts, "contexto de atua??o", record.get("contexto_atuacao"))
         if self._has_meaningful_value(record.get("professor_nome")):
             parts.append(f"com professor relacionado {record['professor_nome']}")
         self._append_minutes_part(parts, "pessoas relacionadas", record.get("pessoas_relacionadas"))
-        self._append_minutes_part(parts, "providências adotadas", record.get("providencias_adotadas"))
+        self._append_minutes_part(parts, "provid?ncias adotadas", record.get("providencias_adotadas"))
         self._append_minutes_part(parts, "encaminhamento realizado", record.get("encaminhado_para"))
-        self._append_minutes_part(parts, "observações complementares", record.get("observacoes"))
+        self._append_minutes_part(parts, "observa??es complementares", record.get("observacoes"))
         if evidence_mode == "count" and evidencias:
-            parts.append(f"evidências anexadas: {len(evidencias)}")
+            parts.append(f"evid?ncias anexadas: {len(evidencias)}")
         elif evidence_mode == "embed" and evidencias:
             nomes = ", ".join(
                 item.get("nome_arquivo") or f"evidencia_{index + 1}.png"
                 for index, item in enumerate(evidencias)
             )
-            parts.append(f"evidências anexadas: {len(evidencias)}")
-            parts.append(f"arquivos de evidência: {nomes}")
+            parts.append(f"evid?ncias anexadas: {len(evidencias)}")
+            parts.append(f"arquivos de evid?ncia: {nomes}")
         return "; ".join(parts) + "."
 
     def _build_clean_ausencia_minutes_text(self, record: dict) -> str:
         parts = [
-            f"registra-se ausência do professor {record['professor_nome']}",
-            f"no espaço {record['espaco_nome']}",
-            f"tipo de ausência: {record['tipo_ausencia']}",
+            f"registra-se aus?ncia do professor {record['professor_nome']}",
+            f"no espa?o {record['espaco_nome']}",
+            f"tipo de aus?ncia: {record['tipo_ausencia']}",
         ]
+        self._append_minutes_part(parts, "contexto de atua??o", record.get("contexto_atuacao"))
         if record.get("ausencia_integral") == "sim":
-            parts.append("horário informado: ausência integral")
+            parts.append("hor?rio informado: aus?ncia integral")
         elif record.get("hora_inicio") or record.get("hora_fim"):
             parts.append(
-                f"horário informado: {self._format_time_range(record.get('hora_inicio'), record.get('hora_fim'))}"
+                f"hor?rio informado: {self._format_time_range(record.get('hora_inicio'), record.get('hora_fim'))}"
             )
-        self._append_minutes_part(parts, "comunicação prévia", record.get("havia_comunicacao_previa"))
-        self._append_minutes_part(parts, "houve substituição", record.get("houve_substituicao"))
+        self._append_minutes_part(parts, "comunica??o pr?via", record.get("havia_comunicacao_previa"))
+        self._append_minutes_part(parts, "houve substitui??o", record.get("houve_substituicao"))
         self._append_minutes_part(parts, "impacto observado", record.get("impacto_observado"))
-        self._append_minutes_part(parts, "providência adotada", record.get("providencia_tomada"))
-        self._append_minutes_part(parts, "observações complementares", record.get("observacoes"))
+        self._append_minutes_part(parts, "provid?ncia adotada", record.get("providencia_tomada"))
+        self._append_minutes_part(parts, "observa??es complementares", record.get("observacoes"))
         return "; ".join(parts) + "."
 
     def _build_clean_rotina_minutes_text(self, record: dict, evidence_mode: str) -> str:
@@ -281,24 +290,25 @@ class RelatoriosWindow(tk.Toplevel):
         parts = [
             f"registra-se rotina docente na categoria {record['categoria']}",
             f"professores envolvidos: {record['professor_nome']}",
-            f"título da atividade: {record['titulo']}",
-            f"descrição da atividade: {record['descricao_atividade']}",
+            f"t?tulo da atividade: {record['titulo']}",
+            f"descri??o da atividade: {record['descricao_atividade']}",
         ]
-        self._append_minutes_part(parts, "espaço", record.get("espaco_nome"))
-        self._append_minutes_part(parts, "turma ou público", record.get("turma_ou_publico"))
+        self._append_minutes_part(parts, "contexto de atua??o", record.get("contexto_atuacao"))
+        self._append_minutes_part(parts, "espa?o", record.get("espaco_nome"))
+        self._append_minutes_part(parts, "turma ou p?blico", record.get("turma_ou_publico"))
         self._append_minutes_part(parts, "objetivos", record.get("objetivos"))
         self._append_minutes_part(parts, "recursos utilizados", record.get("recursos_utilizados"))
         self._append_minutes_part(parts, "encaminhamentos", record.get("encaminhamentos"))
-        self._append_minutes_part(parts, "observações complementares", record.get("observacoes"))
+        self._append_minutes_part(parts, "observa??es complementares", record.get("observacoes"))
         if evidence_mode == "count" and evidencias:
-            parts.append(f"evidências anexadas: {len(evidencias)}")
+            parts.append(f"evid?ncias anexadas: {len(evidencias)}")
         elif evidence_mode == "embed" and evidencias:
             nomes = ", ".join(
                 item.get("nome_arquivo") or f"evidencia_{index + 1}.png"
                 for index, item in enumerate(evidencias)
             )
-            parts.append(f"evidências anexadas: {len(evidencias)}")
-            parts.append(f"arquivos de evidência: {nomes}")
+            parts.append(f"evid?ncias anexadas: {len(evidencias)}")
+            parts.append(f"arquivos de evid?ncia: {nomes}")
         return "; ".join(parts) + "."
 
     def _set_output(
@@ -339,6 +349,9 @@ class RelatoriosWindow(tk.Toplevel):
         if space_id:
             filters["espaco_id"] = space_id
 
+        if self.context_combo.get():
+            filters["contexto_atuacao"] = self.context_combo.get()
+
         return filters, specific_date, has_period
 
     def _get_intercorrencia_with_evidences(self, record: dict) -> dict:
@@ -353,50 +366,50 @@ class RelatoriosWindow(tk.Toplevel):
 
     def _render_intercorrencias(self, records: list[dict], evidence_mode: str = "count") -> str:
         if not records:
-            return "Nenhuma intercorrência encontrada."
+            return "Nenhuma intercorr?ncia encontrada."
         lines = []
         for record in records:
             full_record = self._get_intercorrencia_with_evidences(record)
             evidencias = full_record.get("evidencias") or []
             lines.append(
                 f"Data: {format_date_display(record['data'])} | Hora: {record['hora']} | Tipo: {record['tipo_nome']} | "
-                f"Espaço: {record['espaco_nome']} | Professor: {record.get('professor_nome') or '-'}"
+                f"Espa?o: {record['espaco_nome']} | Contexto: {record.get('contexto_atuacao') or '-'} | Professor: {record.get('professor_nome') or '-'}"
             )
-            lines.append(f"Descrição objetiva: {record['descricao_objetiva']}")
-            lines.append(f"Providências adotadas: {record.get('providencias_adotadas') or '-'}")
+            lines.append(f"Descri??o objetiva: {record['descricao_objetiva']}")
+            lines.append(f"Provid?ncias adotadas: {record.get('providencias_adotadas') or '-'}")
             lines.append(f"Encaminhamento: {record.get('encaminhado_para') or '-'}")
-            lines.append(f"Observações: {record.get('observacoes') or '-'}")
+            lines.append(f"Observa??es: {record.get('observacoes') or '-'}")
             if evidence_mode == "count":
-                lines.append(f"Evidências anexadas: {len(evidencias)}")
+                lines.append(f"Evid?ncias anexadas: {len(evidencias)}")
             elif evidence_mode == "embed":
-                lines.append(f"Evidências anexadas: {len(evidencias)}")
+                lines.append(f"Evid?ncias anexadas: {len(evidencias)}")
                 nomes = ", ".join(
                     item.get("nome_arquivo") or f"evidencia_{index + 1}.png"
                     for index, item in enumerate(evidencias)
                 )
-                lines.append(f"Arquivos de evidência: {nomes or '-'}")
+                lines.append(f"Arquivos de evid?ncia: {nomes or '-'}")
             lines.append("")
         return "\n".join(lines).strip()
 
     def _render_ausencias(self, records: list[dict]) -> str:
         if not records:
-            return "Nenhuma ausência encontrada."
+            return "Nenhuma aus?ncia encontrada."
         lines = []
         for record in records:
             horario = (
-                "Ausência integral"
+                "Aus?ncia integral"
                 if record.get("ausencia_integral") == "sim"
-                else f"{record.get('hora_inicio') or '-'} até {record.get('hora_fim') or '-'}"
+                else f"{record.get('hora_inicio') or '-'} at? {record.get('hora_fim') or '-'}"
             )
             lines.append(
-                f"Data: {format_date_display(record['data'])} | Horário: {horario} | Professor: {record['professor_nome']} | "
-                f"Espaço: {record['espaco_nome']} | Tipo: {record['tipo_ausencia']}"
+                f"Data: {format_date_display(record['data'])} | Hor?rio: {horario} | Professor: {record['professor_nome']} | "
+                f"Espa?o: {record['espaco_nome']} | Contexto: {record.get('contexto_atuacao') or '-'} | Tipo: {record['tipo_ausencia']}"
             )
-            lines.append(f"Comunicação prévia: {record.get('havia_comunicacao_previa') or '-'}")
-            lines.append(f"Substituição: {record.get('houve_substituicao') or '-'}")
+            lines.append(f"Comunica??o pr?via: {record.get('havia_comunicacao_previa') or '-'}")
+            lines.append(f"Substitui??o: {record.get('houve_substituicao') or '-'}")
             lines.append(f"Impacto observado: {record.get('impacto_observado') or '-'}")
-            lines.append(f"Providência tomada: {record.get('providencia_tomada') or '-'}")
-            lines.append(f"Observações: {record.get('observacoes') or '-'}")
+            lines.append(f"Provid?ncia tomada: {record.get('providencia_tomada') or '-'}")
+            lines.append(f"Observa??es: {record.get('observacoes') or '-'}")
             lines.append("")
         return "\n".join(lines).strip()
 
@@ -409,34 +422,37 @@ class RelatoriosWindow(tk.Toplevel):
             evidencias = full_record.get("evidencias") or []
             horario = ""
             if record.get("hora_inicio") or record.get("hora_fim"):
-                horario = f" | Horário: {record.get('hora_inicio') or '-'} até {record.get('hora_fim') or '-'}"
+                horario = f" | Hor?rio: {record.get('hora_inicio') or '-'} at? {record.get('hora_fim') or '-'}"
             lines.append(
                 f"Data: {format_date_display(record['data'])}{horario} | Categoria: {record['categoria']} | "
-                f"Professores: {record['professor_nome']} | Espaço: {record.get('espaco_nome') or '-'}"
+                f"Professores: {record['professor_nome']} | Espa?o: {record.get('espaco_nome') or '-'} | Contexto: {record.get('contexto_atuacao') or '-'}"
             )
-            lines.append(f"Título: {record['titulo']}")
-            lines.append(f"Turma ou público: {record.get('turma_ou_publico') or '-'}")
-            lines.append(f"Descrição da atividade: {record['descricao_atividade']}")
+            lines.append(f"T?tulo: {record['titulo']}")
+            lines.append(f"Turma ou p?blico: {record.get('turma_ou_publico') or '-'}")
+            lines.append(f"Descri??o da atividade: {record['descricao_atividade']}")
             lines.append(f"Objetivos: {record.get('objetivos') or '-'}")
             lines.append(f"Recursos utilizados: {record.get('recursos_utilizados') or '-'}")
             lines.append(f"Encaminhamentos: {record.get('encaminhamentos') or '-'}")
-            lines.append(f"Observações: {record.get('observacoes') or '-'}")
+            lines.append(f"Observa??es: {record.get('observacoes') or '-'}")
             if evidence_mode == "count":
-                lines.append(f"Evidências anexadas: {len(evidencias)}")
+                lines.append(f"Evid?ncias anexadas: {len(evidencias)}")
             elif evidence_mode == "embed":
-                lines.append(f"Evidências anexadas: {len(evidencias)}")
+                lines.append(f"Evid?ncias anexadas: {len(evidencias)}")
                 nomes = ", ".join(
                     item.get("nome_arquivo") or f"evidencia_{index + 1}.png"
                     for index, item in enumerate(evidencias)
                 )
-                lines.append(f"Arquivos de evidência: {nomes or '-'}")
+                lines.append(f"Arquivos de evid?ncia: {nomes or '-'}")
             lines.append("")
         return "\n".join(lines).strip()
 
     def generate_day_report(self) -> None:
         report_date = normalize_date(self.day_entry.get()) if self.day_entry.get().strip() else current_date_iso()
         evidence_mode = self._selected_period_evidence_mode()
-        filters = {"specific_date": report_date}
+        filters, _, _ = self._collect_report_filters()
+        filters.pop("start_date", None)
+        filters.pop("end_date", None)
+        filters["specific_date"] = report_date
         inter = self.db.search_intercorrencias(filters)
         aus = self.db.search_ausencias(filters)
         rotinas = self.db.search_rotinas_docentes(filters)
@@ -448,11 +464,18 @@ class RelatoriosWindow(tk.Toplevel):
             inter_context = inter
             rotinas_context = rotinas
 
-        title = f"Relatório do dia - {format_date_display(report_date)}"
+        title_parts = [format_date_display(report_date)]
+        if self.professor_combo.get():
+            title_parts.append(f"Professor: {self.professor_combo.get()}")
+        if self.space_combo.get():
+            title_parts.append(f"Espa?o: {self.space_combo.get()}")
+        if self.context_combo.get():
+            title_parts.append(f"Contexto: {self.context_combo.get()}")
+        title = "Relat?rio do dia - " + " | ".join(title_parts)
         preview = (
-            "Intercorrências\n"
+            "Intercorr?ncias\n"
             f"{self._render_intercorrencias(inter_context, evidence_mode=evidence_mode)}\n\n"
-            "Ausências de professores\n"
+            "Aus?ncias de professores\n"
             f"{self._render_ausencias(aus)}\n\n"
             "Rotinas docentes\n"
             f"{self._render_rotinas(rotinas_context, evidence_mode=evidence_mode)}"
@@ -477,7 +500,17 @@ class RelatoriosWindow(tk.Toplevel):
     def generate_period_report(self) -> None:
         start, end = self._normalized_period()
         evidence_mode = self._selected_period_evidence_mode()
-        filters = {"start_date": start, "end_date": end}
+        filters, _, _ = self._collect_report_filters()
+        filters.pop("specific_date", None)
+        if start:
+            filters["start_date"] = start
+        else:
+            filters.pop("start_date", None)
+        if end:
+            filters["end_date"] = end
+        else:
+            filters.pop("end_date", None)
+
         inter = self.db.search_intercorrencias(filters)
         aus = self.db.search_ausencias(filters)
         rotinas = self.db.search_rotinas_docentes(filters)
@@ -489,14 +522,21 @@ class RelatoriosWindow(tk.Toplevel):
             inter_context = inter
             rotinas_context = rotinas
 
-        title = f"Relatório por período - {format_date_display(start or '') or 'início aberto'} a {format_date_display(end or '') or 'fim aberto'}"
+        title_parts = [f"{format_date_display(start or '') or 'in?cio aberto'} a {format_date_display(end or '') or 'fim aberto'}"]
+        if self.professor_combo.get():
+            title_parts.append(f"Professor: {self.professor_combo.get()}")
+        if self.space_combo.get():
+            title_parts.append(f"Espa?o: {self.space_combo.get()}")
+        if self.context_combo.get():
+            title_parts.append(f"Contexto: {self.context_combo.get()}")
+        title = "Relat?rio por per?odo - " + " | ".join(title_parts)
         preview = (
-            f"Total de intercorrências: {len(inter)}\n"
-            f"Total de ausências: {len(aus)}\n"
+            f"Total de intercorr?ncias: {len(inter)}\n"
+            f"Total de aus?ncias: {len(aus)}\n"
             f"Total de rotinas docentes: {len(rotinas)}\n\n"
-            "Intercorrências\n"
+            "Intercorr?ncias\n"
             f"{self._render_intercorrencias(inter_context, evidence_mode=evidence_mode)}\n\n"
-            "Ausências de professores\n"
+            "Aus?ncias de professores\n"
             f"{self._render_ausencias(aus)}\n\n"
             "Rotinas docentes\n"
             f"{self._render_rotinas(rotinas_context, evidence_mode=evidence_mode)}"
@@ -524,11 +564,21 @@ class RelatoriosWindow(tk.Toplevel):
         professor_name = self.professor_combo.get()
         professor_id = self.professor_map.get(professor_name)
         if not professor_id:
-            show_error("Filtro obrigatório", "Selecione um professor para gerar o relatório.", self)
+            show_error("Filtro obrigat?rio", "Selecione um professor para gerar o relat?rio.", self)
             return
         start, end = self._normalized_period()
         evidence_mode = self._selected_period_evidence_mode()
-        filters = {"professor_id": professor_id, "start_date": start, "end_date": end}
+        filters = {"professor_id": professor_id}
+        if start:
+            filters["start_date"] = start
+        if end:
+            filters["end_date"] = end
+        space_id = self.space_map.get(self.space_combo.get())
+        if space_id:
+            filters["espaco_id"] = space_id
+        if self.context_combo.get():
+            filters["contexto_atuacao"] = self.context_combo.get()
+
         inter = self.db.search_intercorrencias(filters)
         aus = self.db.search_ausencias(filters)
         rotinas = self.db.search_rotinas_docentes(filters)
@@ -540,12 +590,14 @@ class RelatoriosWindow(tk.Toplevel):
             inter_context = inter
             rotinas_context = rotinas
 
-        title = f"Histórico do professor - {professor_name}"
+        title = f"Hist?rico do professor - {professor_name}"
+        if self.context_combo.get():
+            title += f" | Contexto: {self.context_combo.get()}"
         preview = (
-            f"Período: {format_date_display(start or '') or 'início aberto'} a {format_date_display(end or '') or 'fim aberto'}\n\n"
-            "Intercorrências\n"
+            f"Per?odo: {format_date_display(start or '') or 'in?cio aberto'} a {format_date_display(end or '') or 'fim aberto'}\n\n"
+            "Intercorr?ncias\n"
             f"{self._render_intercorrencias(inter_context, evidence_mode=evidence_mode)}\n\n"
-            "Ausências de professores\n"
+            "Aus?ncias de professores\n"
             f"{self._render_ausencias(aus)}\n\n"
             "Rotinas docentes\n"
             f"{self._render_rotinas(rotinas_context, evidence_mode=evidence_mode)}"
@@ -571,11 +623,21 @@ class RelatoriosWindow(tk.Toplevel):
         space_name = self.space_combo.get()
         space_id = self.space_map.get(space_name)
         if not space_id:
-            show_error("Filtro obrigatório", "Selecione um espaço para gerar o relatório.", self)
+            show_error("Filtro obrigat?rio", "Selecione um espa?o para gerar o relat?rio.", self)
             return
         start, end = self._normalized_period()
         evidence_mode = self._selected_period_evidence_mode()
-        filters = {"espaco_id": space_id, "start_date": start, "end_date": end}
+        filters = {"espaco_id": space_id}
+        if start:
+            filters["start_date"] = start
+        if end:
+            filters["end_date"] = end
+        professor_id = self.professor_map.get(self.professor_combo.get())
+        if professor_id:
+            filters["professor_id"] = professor_id
+        if self.context_combo.get():
+            filters["contexto_atuacao"] = self.context_combo.get()
+
         inter = self.db.search_intercorrencias(filters)
         aus = self.db.search_ausencias(filters)
         rotinas = self.db.search_rotinas_docentes(filters)
@@ -587,12 +649,14 @@ class RelatoriosWindow(tk.Toplevel):
             inter_context = inter
             rotinas_context = rotinas
 
-        title = f"Histórico do espaço - {space_name}"
+        title = f"Hist?rico do espa?o - {space_name}"
+        if self.context_combo.get():
+            title += f" | Contexto: {self.context_combo.get()}"
         preview = (
-            f"Período: {format_date_display(start or '') or 'início aberto'} a {format_date_display(end or '') or 'fim aberto'}\n\n"
-            "Intercorrências\n"
+            f"Per?odo: {format_date_display(start or '') or 'in?cio aberto'} a {format_date_display(end or '') or 'fim aberto'}\n\n"
+            "Intercorr?ncias\n"
             f"{self._render_intercorrencias(inter_context, evidence_mode=evidence_mode)}\n\n"
-            "Ausências de professores\n"
+            "Aus?ncias de professores\n"
             f"{self._render_ausencias(aus)}\n\n"
             "Rotinas docentes\n"
             f"{self._render_rotinas(rotinas_context, evidence_mode=evidence_mode)}"
@@ -762,7 +826,7 @@ class RelatoriosWindow(tk.Toplevel):
         break_mode = self._selected_ata_break_mode()
         start, end = self._normalized_period()
         if force_period and not (start or end):
-            show_error("Filtro obrigatório", "Informe a data inicial e/ou a data final para gerar a ata por período.", self)
+            show_error("Filtro obrigat?rio", "Informe a data inicial e/ou a data final para gerar a ata por per?odo.", self)
             return
 
         if force_period:
@@ -777,6 +841,8 @@ class RelatoriosWindow(tk.Toplevel):
             space_id = self.space_map.get(self.space_combo.get())
             if space_id:
                 filters["espaco_id"] = space_id
+            if self.context_combo.get():
+                filters["contexto_atuacao"] = self.context_combo.get()
             specific_date = None
             has_period = True
         else:
@@ -795,32 +861,32 @@ class RelatoriosWindow(tk.Toplevel):
 
         title_parts = []
         if has_period:
-            title_parts.append(f"{format_date_display(start or '') or 'início aberto'} a {format_date_display(end or '') or 'fim aberto'}")
+            title_parts.append(f"{format_date_display(start or '') or 'in?cio aberto'} a {format_date_display(end or '') or 'fim aberto'}")
         elif specific_date:
             title_parts.append(format_date_display(specific_date))
         if self.professor_combo.get():
             title_parts.append(f"Professor: {self.professor_combo.get()}")
         if self.space_combo.get():
-            title_parts.append(f"Espaço: {self.space_combo.get()}")
+            title_parts.append(f"Espa?o: {self.space_combo.get()}")
+        if self.context_combo.get():
+            title_parts.append(f"Contexto: {self.context_combo.get()}")
 
         title = "Ata de registros"
         if title_parts:
             title += " - " + " | ".join(title_parts)
 
         events = self._build_minutes_events(inter_context, aus, rotinas_context, evidence_mode)
-        organization_text = "organizada por data" if break_mode == "date" else "organizada por horário"
+        organization_text = "organizada por data" if break_mode == "date" else "organizada por hor?rio"
         if has_period:
-            scope_text = f"no período de {format_date_display(start or '') or 'início aberto'} a {format_date_display(end or '') or 'fim aberto'}"
+            scope_text = f"no per?odo de {format_date_display(start or '') or 'in?cio aberto'} a {format_date_display(end or '') or 'fim aberto'}"
         elif specific_date:
             scope_text = f"na data de {format_date_display(specific_date)}"
         else:
             scope_text = "no recorte informado"
-        intro = (
-            f"Fica registrada a presente ata, {organization_text}, referente aos fatos observados {scope_text}.\n"
-        )
+        intro = f"Fica registrada a presente ata, {organization_text}, referente aos fatos observados {scope_text}.\n"
         totals = (
-            f"Total de intercorrências: {len(inter)}\n"
-            f"Total de ausências: {len(aus)}\n"
+            f"Total de intercorr?ncias: {len(inter)}\n"
+            f"Total de aus?ncias: {len(aus)}\n"
             f"Total de rotinas docentes: {len(rotinas)}\n\n"
         )
         preview = intro + totals + self._build_minutes_preview(events, break_mode)
@@ -877,6 +943,7 @@ class RelatoriosWindow(tk.Toplevel):
                 "tipo": record["tipo_nome"],
                 "espaco": record["espaco_nome"],
                 "professor": record.get("professor_nome") or "",
+                "contexto": record.get("contexto_atuacao") or "",
                 "descricao": record["descricao_objetiva"],
                 "providencias": record.get("providencias_adotadas") or "",
                 "encaminhamento": record.get("encaminhado_para") or "",
@@ -901,6 +968,7 @@ class RelatoriosWindow(tk.Toplevel):
                 "tipo": record["tipo_ausencia"],
                 "espaco": record["espaco_nome"],
                 "professor": record["professor_nome"],
+                "contexto": record.get("contexto_atuacao") or "",
                 "descricao": record.get("impacto_observado") or "",
                 "providencias": record.get("providencia_tomada") or "",
                 "encaminhamento": record.get("havia_comunicacao_previa") or "",
@@ -922,6 +990,7 @@ class RelatoriosWindow(tk.Toplevel):
                 "tipo": record["categoria"],
                 "espaco": record.get("espaco_nome") or "",
                 "professor": record["professor_nome"],
+                "contexto": record.get("contexto_atuacao") or "",
                 "descricao": f"{record['titulo']} | {record['descricao_atividade']}",
                 "providencias": record.get("encaminhamentos") or "",
                 "encaminhamento": record.get("objetivos") or "",

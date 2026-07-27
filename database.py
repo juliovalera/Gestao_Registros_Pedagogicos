@@ -96,6 +96,7 @@ class DatabaseManager:
                     hora TEXT NOT NULL,
                     tipo_ocorrencia_id INTEGER NOT NULL,
                     espaco_id INTEGER NOT NULL,
+                    contexto_atuacao TEXT,
                     pessoas_relacionadas TEXT,
                     professor_relacionado_id INTEGER,
                     descricao_objetiva TEXT NOT NULL,
@@ -119,6 +120,7 @@ class DatabaseManager:
                     hora_fim TEXT,
                     professor_id INTEGER NOT NULL,
                     espaco_id INTEGER NOT NULL,
+                    contexto_atuacao TEXT,
                     turma_ou_grupo_afetado TEXT,
                     tipo_ausencia TEXT NOT NULL,
                     havia_comunicacao_previa TEXT,
@@ -140,6 +142,7 @@ class DatabaseManager:
                     categoria TEXT NOT NULL,
                     professor_id INTEGER NOT NULL,
                     espaco_id INTEGER,
+                    contexto_atuacao TEXT,
                     turma_ou_publico TEXT,
                     titulo TEXT NOT NULL,
                     descricao_atividade TEXT NOT NULL,
@@ -189,6 +192,9 @@ class DatabaseManager:
             )
             self._ensure_column(conn, "ausencias_professores", "ausencia_integral", "TEXT NOT NULL DEFAULT 'não'")
             self._ensure_column(conn, "intercorrencias", "todos_professores", "TEXT NOT NULL DEFAULT 'não'")
+            self._ensure_column(conn, "intercorrencias", "contexto_atuacao", "TEXT")
+            self._ensure_column(conn, "ausencias_professores", "contexto_atuacao", "TEXT")
+            self._ensure_column(conn, "rotinas_docentes", "contexto_atuacao", "TEXT")
             self._seed_reference_data(conn)
             self._seed_sample_data(conn)
             self._migrate_rotinas_docentes_professores(conn)
@@ -335,18 +341,19 @@ class DatabaseManager:
             conn.execute(
                 """
                 INSERT INTO intercorrencias (
-                    data, hora, tipo_ocorrencia_id, espaco_id, pessoas_relacionadas,
+                    data, hora, tipo_ocorrencia_id, espaco_id, contexto_atuacao, pessoas_relacionadas,
                     professor_relacionado_id, descricao_objetiva, providencias_adotadas,
                     encaminhado_para, nivel_gravidade, tags, observacoes,
                     data_hora_registro, data_hora_atualizacao
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     current_date_iso(),
                     current_time_hm(),
                     tipos["Registro preventivo"],
                     next(iter(espacos.values())),
+                    "CIEBP",
                     "grupo do 9º ano",
                     next(iter(professor_map.values())),
                     "Registro fictício inicial criado para demonstrar o uso do sistema.",
@@ -362,12 +369,12 @@ class DatabaseManager:
             conn.execute(
                 """
                 INSERT INTO ausencias_professores (
-                    data, ausencia_integral, hora_inicio, hora_fim, professor_id, espaco_id,
+                    data, ausencia_integral, hora_inicio, hora_fim, professor_id, espaco_id, contexto_atuacao,
                     turma_ou_grupo_afetado, tipo_ausencia, havia_comunicacao_previa,
                     houve_substituicao, impacto_observado, providencia_tomada,
                     observacoes, data_hora_registro, data_hora_atualizacao
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     current_date_iso(),
@@ -376,6 +383,7 @@ class DatabaseManager:
                     "08:50",
                     next(iter(professor_map.values())),
                     next(iter(espacos.values())),
+                    "CIEBP",
                     "turma visitante",
                     "atraso",
                     "não sei",
@@ -390,12 +398,12 @@ class DatabaseManager:
             conn.execute(
                 """
                 INSERT INTO rotinas_docentes (
-                    data, hora_inicio, hora_fim, categoria, professor_id, espaco_id,
+                    data, hora_inicio, hora_fim, categoria, professor_id, espaco_id, contexto_atuacao,
                     turma_ou_publico, titulo, descricao_atividade, objetivos,
                     recursos_utilizados, encaminhamentos, tags, observacoes,
                     data_hora_registro, data_hora_atualizacao
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     current_date_iso(),
@@ -404,6 +412,7 @@ class DatabaseManager:
                     ROTINA_DOCENTE_CATEGORIAS[1],
                     next(iter(professor_map.values())),
                     next(iter(espacos.values())),
+                    "CIEBP",
                     "turma visitante",
                     "Planejamento inicial de oficina",
                     "Organização do planejamento de uma aula/oficina para uso demonstrativo do sistema.",
@@ -627,9 +636,10 @@ class DatabaseManager:
             data["hora"],
             data["tipo_ocorrencia_id"],
             data["espaco_id"],
+            clean_optional(data.get("contexto_atuacao")),
             clean_optional(data.get("pessoas_relacionadas")),
             data.get("professor_relacionado_id"),
-            data.get("todos_professores", "não"),
+            data.get("todos_professores", "n?o"),
             data["descricao_objetiva"].strip(),
             clean_optional(data.get("providencias_adotadas")),
             clean_optional(data.get("encaminhado_para")),
@@ -642,12 +652,12 @@ class DatabaseManager:
                 cursor = conn.execute(
                     """
                     INSERT INTO intercorrencias (
-                        data, hora, tipo_ocorrencia_id, espaco_id, pessoas_relacionadas,
+                        data, hora, tipo_ocorrencia_id, espaco_id, contexto_atuacao, pessoas_relacionadas,
                         professor_relacionado_id, todos_professores, descricao_objetiva, providencias_adotadas,
                         encaminhado_para, nivel_gravidade, tags, observacoes,
                         data_hora_registro, data_hora_atualizacao
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     payload + (now, now),
                 )
@@ -656,7 +666,7 @@ class DatabaseManager:
                 conn.execute(
                     """
                     UPDATE intercorrencias
-                    SET data = ?, hora = ?, tipo_ocorrencia_id = ?, espaco_id = ?, pessoas_relacionadas = ?,
+                    SET data = ?, hora = ?, tipo_ocorrencia_id = ?, espaco_id = ?, contexto_atuacao = ?, pessoas_relacionadas = ?,
                         professor_relacionado_id = ?, todos_professores = ?, descricao_objetiva = ?, providencias_adotadas = ?,
                         encaminhado_para = ?, nivel_gravidade = ?, tags = ?, observacoes = ?,
                         data_hora_atualizacao = ?
@@ -705,11 +715,12 @@ class DatabaseManager:
         now = current_timestamp()
         payload = (
             data["data"],
-            data.get("ausencia_integral", "não"),
+            data.get("ausencia_integral", "n?o"),
             clean_optional(data.get("hora_inicio")),
             clean_optional(data.get("hora_fim")),
             data["professor_id"],
             data["espaco_id"],
+            clean_optional(data.get("contexto_atuacao")),
             clean_optional(data.get("turma_ou_grupo_afetado")),
             data["tipo_ausencia"],
             clean_optional(data.get("havia_comunicacao_previa")),
@@ -723,12 +734,12 @@ class DatabaseManager:
                 conn.execute(
                     """
                     INSERT INTO ausencias_professores (
-                        data, ausencia_integral, hora_inicio, hora_fim, professor_id, espaco_id,
+                        data, ausencia_integral, hora_inicio, hora_fim, professor_id, espaco_id, contexto_atuacao,
                         turma_ou_grupo_afetado, tipo_ausencia, havia_comunicacao_previa,
                         houve_substituicao, impacto_observado, providencia_tomada,
                         observacoes, data_hora_registro, data_hora_atualizacao
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     payload + (now, now),
                 )
@@ -737,7 +748,7 @@ class DatabaseManager:
                     """
                     UPDATE ausencias_professores
                     SET data = ?, ausencia_integral = ?, hora_inicio = ?, hora_fim = ?, professor_id = ?, espaco_id = ?,
-                        turma_ou_grupo_afetado = ?, tipo_ausencia = ?, havia_comunicacao_previa = ?,
+                        contexto_atuacao = ?, turma_ou_grupo_afetado = ?, tipo_ausencia = ?, havia_comunicacao_previa = ?,
                         houve_substituicao = ?, impacto_observado = ?, providencia_tomada = ?,
                         observacoes = ?, data_hora_atualizacao = ?
                     WHERE id = ?
@@ -811,6 +822,7 @@ class DatabaseManager:
             data["categoria"],
             professor_id_principal,
             data.get("espaco_id"),
+            clean_optional(data.get("contexto_atuacao")),
             clean_optional(data.get("turma_ou_publico")),
             data["titulo"].strip(),
             data["descricao_atividade"].strip(),
@@ -825,12 +837,12 @@ class DatabaseManager:
                 cursor = conn.execute(
                     """
                     INSERT INTO rotinas_docentes (
-                        data, hora_inicio, hora_fim, categoria, professor_id, espaco_id,
+                        data, hora_inicio, hora_fim, categoria, professor_id, espaco_id, contexto_atuacao,
                         turma_ou_publico, titulo, descricao_atividade, objetivos,
                         recursos_utilizados, encaminhamentos, tags, observacoes,
                         data_hora_registro, data_hora_atualizacao
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     payload + (now, now),
                 )
@@ -840,7 +852,7 @@ class DatabaseManager:
                     """
                     UPDATE rotinas_docentes
                     SET data = ?, hora_inicio = ?, hora_fim = ?, categoria = ?, professor_id = ?, espaco_id = ?,
-                        turma_ou_publico = ?, titulo = ?, descricao_atividade = ?, objetivos = ?,
+                        contexto_atuacao = ?, turma_ou_publico = ?, titulo = ?, descricao_atividade = ?, objetivos = ?,
                         recursos_utilizados = ?, encaminhamentos = ?, tags = ?, observacoes = ?,
                         data_hora_atualizacao = ?
                     WHERE id = ?
@@ -901,6 +913,9 @@ class DatabaseManager:
         if filters.get("espaco_id"):
             clauses.append("base.espaco_id = ?")
             params.append(filters["espaco_id"])
+        if filters.get("contexto_atuacao"):
+            clauses.append("COALESCE(base.contexto_atuacao, '') = ?")
+            params.append(filters["contexto_atuacao"])
         if filters.get("categoria"):
             clauses.append("base.categoria = ?")
             params.append(filters["categoria"])
@@ -926,7 +941,7 @@ class DatabaseManager:
 
         sql = """
             SELECT
-                base.*,
+                base.*, 
                 COALESCE(
                     (
                         SELECT GROUP_CONCAT(nome_completo, ', ')
@@ -976,6 +991,9 @@ class DatabaseManager:
         if filters.get("espaco_id"):
             clauses.append("(base.espaco_id = ? OR base.espaco_id = (SELECT id FROM espacos WHERE nome = ?))")
             params.extend([filters["espaco_id"], ESPACO_TODOS])
+        if filters.get("contexto_atuacao"):
+            clauses.append("COALESCE(base.contexto_atuacao, '') = ?")
+            params.append(filters["contexto_atuacao"])
         if filters.get("tipo_ocorrencia_id"):
             clauses.append("base.tipo_ocorrencia_id = ?")
             params.append(filters["tipo_ocorrencia_id"])
@@ -1002,9 +1020,9 @@ class DatabaseManager:
                 """
                 CASE COALESCE(base.nivel_gravidade, '')
                     WHEN 'Baixo' THEN 1
-                    WHEN 'Médio' THEN 2
+                    WHEN 'M?dio' THEN 2
                     WHEN 'Alto' THEN 3
-                    WHEN 'Crítico' THEN 4
+                    WHEN 'Cr?tico' THEN 4
                     ELSE 0
                 END >= ?
                 """
@@ -1045,6 +1063,9 @@ class DatabaseManager:
         if filters.get("espaco_id"):
             clauses.append("base.espaco_id = ?")
             params.append(filters["espaco_id"])
+        if filters.get("contexto_atuacao"):
+            clauses.append("COALESCE(base.contexto_atuacao, '') = ?")
+            params.append(filters["contexto_atuacao"])
         if filters.get("tipo_ausencia"):
             clauses.append("base.tipo_ausencia = ?")
             params.append(filters["tipo_ausencia"])
@@ -1145,10 +1166,10 @@ class DatabaseManager:
             por_gravidade = self._rows_to_dicts(
                 conn.execute(
                     f"""
-                    SELECT COALESCE(nivel_gravidade, 'Não informado') AS nome, COUNT(*) AS quantidade
+                    SELECT COALESCE(nivel_gravidade, 'N?o informado') AS nome, COUNT(*) AS quantidade
                     FROM intercorrencias
                     {where_clause}
-                    GROUP BY COALESCE(nivel_gravidade, 'Não informado')
+                    GROUP BY COALESCE(nivel_gravidade, 'N?o informado')
                     ORDER BY quantidade DESC, nome
                     """,
                     params,
@@ -1166,6 +1187,30 @@ class DatabaseManager:
                     params,
                 ).fetchall()
             )
+            por_contexto = self._rows_to_dicts(
+                conn.execute(
+                    f"""
+                    SELECT contexto_atuacao AS nome, COUNT(*) AS quantidade
+                    FROM (
+                        SELECT i.contexto_atuacao AS contexto_atuacao
+                        FROM intercorrencias i
+                        {where_clause.replace('data', 'i.data')}
+                        UNION ALL
+                        SELECT a.contexto_atuacao AS contexto_atuacao
+                        FROM ausencias_professores a
+                        {where_clause.replace('data', 'a.data')}
+                        UNION ALL
+                        SELECT r.contexto_atuacao AS contexto_atuacao
+                        FROM rotinas_docentes r
+                        {where_clause.replace('data', 'r.data')}
+                    ) base
+                    WHERE COALESCE(contexto_atuacao, '') <> ''
+                    GROUP BY contexto_atuacao
+                    ORDER BY quantidade DESC, nome
+                    """,
+                    params + params + params,
+                ).fetchall()
+            )
 
         return {
             "total_intercorrencias": total_intercorrencias,
@@ -1175,6 +1220,7 @@ class DatabaseManager:
             "por_espaco": por_espaco,
             "ausencias_por_professor": ausencias_por_professor,
             "por_gravidade": por_gravidade,
+            "por_contexto": por_contexto,
             "rotinas_por_categoria": rotinas_por_categoria,
         }
 
