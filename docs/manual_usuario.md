@@ -1,5 +1,7 @@
 # Manual do Usuário - Gestão de Registros Pedagógicos
 
+Este manual apresenta um fluxo simples e acolhedor para uso diário do sistema em contextos pedagógicos.
+
 ## Finalidade
 
 O sistema foi criado para registrar, consultar e analisar intercorrências diárias, ausências de professores e rotinas docentes no contexto pedagógico escolar, de forma totalmente local.

@@ -1,4 +1,5 @@
 @echo off
+rem Atalho local para abrir a Gestão de Registros Pedagógicos no Windows.
 setlocal
 cd /d "%~dp0"
 
