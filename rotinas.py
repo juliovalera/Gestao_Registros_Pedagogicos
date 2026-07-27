@@ -339,7 +339,7 @@ class RotinaDocenteForm(tk.Toplevel):
         ttk.Button(professor_actions, text="Selecionar todos", command=self._select_all_professors).pack(side="left", padx=(0, 4))
         ttk.Button(professor_actions, text="Limpar seleção", command=self._clear_professor_selection).pack(side="left")
 
-        ttk.Label(frame, text="Contexto de atuação").grid(row=4, column=0, sticky="w", pady=4)
+        ttk.Label(frame, text="Contexto de atuação *").grid(row=4, column=0, sticky="w", pady=4)
         self.context_combo = ttk.Combobox(frame, values=[""] + CONTEXTOS_ATUACAO, state="readonly", width=58)
         self.context_combo.grid(row=4, column=1, sticky="ew", pady=4)
 
@@ -456,10 +456,17 @@ class RotinaDocenteForm(tk.Toplevel):
             show_error("Validação", str(exc), self)
             return
 
-        if not data["data"] or not data["professor_ids"] or not data["categoria"] or not data["titulo"] or not data["descricao_atividade"]:
+        if (
+            not data["data"]
+            or not data["professor_ids"]
+            or not data["contexto_atuacao"]
+            or not data["categoria"]
+            or not data["titulo"]
+            or not data["descricao_atividade"]
+        ):
             show_error(
                 "Campos obrigatórios",
-                "Preencha data, ao menos um professor, categoria, título e descrição da atividade.",
+                "Preencha data, ao menos um professor, contexto de atuação, categoria, título e descrição da atividade.",
                 self,
             )
             return
