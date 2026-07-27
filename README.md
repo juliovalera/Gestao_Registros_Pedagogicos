@@ -382,3 +382,26 @@ O manual está disponível em:
 ## Licença
 
 Este projeto está licenciado sob a licença MIT.
+
+Em termos simples, isso significa que outras pessoas podem:
+
+- usar o projeto livremente
+- estudar o código
+- adaptar para outra realidade escolar ou institucional
+- copiar e redistribuir
+- publicar versões modificadas
+
+Desde que mantenham:
+
+- o aviso de copyright
+- o texto da licença MIT
+
+Em linguagem pedagógica, a licença MIT funciona como uma autorização ampla para reaproveitamento do projeto, inclusive com personalizações, desde que a autoria original e a licença sejam preservadas junto ao código.
+
+Importante:
+
+- a licença não obriga que melhorias sejam devolvidas ao projeto original
+- a licença não oferece garantia de funcionamento para todos os contextos
+- o texto jurídico oficial continua sendo o arquivo `LICENSE`
+
+Ou seja: o projeto pode ser reutilizado, adaptado e compartilhado com bastante liberdade, mas sempre com os créditos e a licença acompanhando a distribuição do código.
