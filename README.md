@@ -4,6 +4,11 @@ Sistema local em Python 3 para registrar, consultar, analisar e exportar informa
 
 Versão atual: `1.001`
 
+Status desta versão:
+
+- versão formal inicial do projeto com controle sequencial
+- próxima atualização prevista: `1.002`
+
 ## Visão geral
 
 O projeto foi pensado para apoiar o trabalho de professores, coordenação e equipes pedagógicas no acompanhamento do dia a dia escolar.
@@ -79,6 +84,30 @@ data/
 backups/
 exports/
 ```
+
+### O que faz cada arquivo
+
+| Arquivo | Finalidade |
+|---|---|
+| `main.py` | Inicializa a aplicação, autenticação, menu principal e resumo da tela inicial. |
+| `database.py` | Centraliza a criação do banco SQLite, consultas, gravações, filtros e estatísticas. |
+| `models.py` | Reúne constantes, listas fixas, nomes do sistema e versão atual. |
+| `cadastros.py` | Tela de cadastros básicos de professores, espaços e tipos de ocorrência. |
+| `intercorrencias.py` | Tela de busca rápida, cadastro, edição e exclusão de intercorrências. |
+| `ausencias.py` | Tela de busca rápida, cadastro, edição e exclusão de ausências de professores. |
+| `rotinas.py` | Tela de busca rápida, cadastro, edição e exclusão de rotinas docentes. |
+| `consultas.py` | Consultas combinadas, filtros avançados, estatísticas e gráficos locais. |
+| `relatorios.py` | Geração de relatórios, atas, exportações e PDFs de evidências. |
+| `backup.py` | Rotinas de backup, restauração e acesso rápido à pasta de cópias locais. |
+| `auth.py` | Controle de login, criação do primeiro usuário e troca de senha. |
+| `utils.py` | Componentes reutilizáveis da interface, calendário, hora, mensagens e funções auxiliares. |
+| `merge_onedrive_databases.py` | Apoio técnico para análise e conferência de bancos duplicados em cenários de sincronização. |
+| `requirements.txt` | Dependências opcionais e recomendadas para PDF, imagens e gráficos. |
+| `README.md` | Apresentação pública do projeto, recursos, execução e visão geral. |
+| `docs/manual_usuario.md` | Manual de uso com linguagem prática para o usuário final. |
+| `data/` | Pasta do banco local utilizado pelo sistema. |
+| `backups/` | Pasta padrão de backups locais do banco. |
+| `exports/` | Pasta padrão de relatórios, planilhas e arquivos exportados. |
 
 ## Requisitos
 
