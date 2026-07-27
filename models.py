@@ -1,7 +1,7 @@
 """Constantes e listas de apoio do sistema pedagógico."""
 
 APP_NAME = "Gestão de Registros Pedagógicos"
-APP_VERSION = "1.003"
+APP_VERSION = "1.004"
 APP_TITLE = f"{APP_NAME} v{APP_VERSION}"
 APP_CREDITS = (
     "Créditos: Professor Júlio César Valera\n"
@@ -71,6 +71,7 @@ ROTINA_DOCENTE_CATEGORIAS = [
     "Diário de classe",
     "Estudo e formação",
     "Lançamento de notas e frequência",
+    "Manutenção e/ou Limpeza",
     "Mentoria",
     "Planejamento coletivo",
     "Planejamento de aula",
