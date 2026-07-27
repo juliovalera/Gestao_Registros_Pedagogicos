@@ -1,4 +1,4 @@
-"""Camada de acesso ao banco SQLite local."""
+﻿"""Camada de acesso ao banco SQLite local."""
 
 from __future__ import annotations
 
@@ -641,7 +641,7 @@ class DatabaseManager:
             clean_optional(data.get("contexto_atuacao")),
             clean_optional(data.get("pessoas_relacionadas")),
             data.get("professor_relacionado_id"),
-            data.get("todos_professores", "n?o"),
+            data.get("todos_professores", "não"),
             data["descricao_objetiva"].strip(),
             clean_optional(data.get("providencias_adotadas")),
             clean_optional(data.get("encaminhado_para")),
@@ -717,7 +717,7 @@ class DatabaseManager:
         now = current_timestamp()
         payload = (
             data["data"],
-            data.get("ausencia_integral", "n?o"),
+            data.get("ausencia_integral", "não"),
             clean_optional(data.get("hora_inicio")),
             clean_optional(data.get("hora_fim")),
             data["professor_id"],
@@ -1022,9 +1022,9 @@ class DatabaseManager:
                 """
                 CASE COALESCE(base.nivel_gravidade, '')
                     WHEN 'Baixo' THEN 1
-                    WHEN 'M?dio' THEN 2
+                    WHEN 'Médio' THEN 2
                     WHEN 'Alto' THEN 3
-                    WHEN 'Cr?tico' THEN 4
+                    WHEN 'Crítico' THEN 4
                     ELSE 0
                 END >= ?
                 """
@@ -1168,10 +1168,10 @@ class DatabaseManager:
             por_gravidade = self._rows_to_dicts(
                 conn.execute(
                     f"""
-                    SELECT COALESCE(nivel_gravidade, 'N?o informado') AS nome, COUNT(*) AS quantidade
+                    SELECT COALESCE(nivel_gravidade, 'Não informado') AS nome, COUNT(*) AS quantidade
                     FROM intercorrencias
                     {where_clause}
-                    GROUP BY COALESCE(nivel_gravidade, 'N?o informado')
+                    GROUP BY COALESCE(nivel_gravidade, 'Não informado')
                     ORDER BY quantidade DESC, nome
                     """,
                     params,
@@ -1350,3 +1350,4 @@ class DatabaseManager:
 
     def restore_database(self, backup_path: Path) -> None:
         shutil.copy2(backup_path, self.db_path)
+
