@@ -2,7 +2,7 @@
 
 Este manual apresenta um fluxo simples e acolhedor para uso diário do sistema em contextos pedagógicos.
 
-Versão atual do sistema: `1.004`
+Versão atual do sistema: `1.005`
 
 ## Finalidade
 
@@ -16,6 +16,7 @@ O sistema passa a utilizar uma numeração sequencial simples de versão.
 - ajuste da ordem visual dos campos no cadastro de rotina docente: `1.002`
 - contexto de atuação obrigatório no cadastro de rotina docente: `1.003`
 - inclusão da categoria `Manutenção e/ou Limpeza` no cadastro de rotina docente: `1.004`
+- sugestão automática de data e hora inicial com base no último registro: `1.005`
 - cada nova implementação ou correção acrescenta `0.001`
 
 Exemplo:
@@ -25,6 +26,7 @@ Exemplo:
 - `1.003`
 - `1.004`
 - `1.005`
+- `1.006`
 
 Créditos:
 

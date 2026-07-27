@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import tkinter as tk
 from tkinter import messagebox, ttk
 
@@ -285,6 +286,8 @@ class RotinaDocenteForm(tk.Toplevel):
         self._load_references()
         if record_id:
             self._load_data()
+        else:
+            self._apply_suggested_defaults()
 
     def _build(self) -> None:
         self.columnconfigure(0, weight=1)
@@ -415,6 +418,45 @@ class RotinaDocenteForm(tk.Toplevel):
         self.encaminhamentos_text.insert("1.0", record.get("encaminhamentos") or "")
         self.observacoes_text.insert("1.0", record.get("observacoes") or "")
         self.evidence_input.set_items(record.get("evidencias"))
+
+    def _apply_suggested_defaults(self) -> None:
+        latest_record = self.db.get_latest_rotina_docente()
+        if not latest_record:
+            self.data_entry.set(dt.date.today().strftime("%d/%m/%Y"))
+            return
+
+        try:
+            latest_date = dt.datetime.strptime(latest_record["data"], "%Y-%m-%d").date()
+        except (TypeError, ValueError):
+            latest_date = dt.date.today()
+
+        reference_time = self._reference_time_from_record(latest_record)
+        next_time = self._next_time_from_record(latest_record)
+        if reference_time and reference_time > dt.time(18, 0):
+            self.data_entry.set(dt.date.today().strftime("%d/%m/%Y"))
+            return
+
+        self.data_entry.set(latest_date.strftime("%d/%m/%Y"))
+        if next_time:
+            self.hora_inicio_entry.set(next_time.strftime("%H:%M"))
+
+    def _reference_time_from_record(self, record: dict) -> dt.time | None:
+        reference_time = (record.get("hora_fim") or "").strip() or (record.get("hora_inicio") or "").strip()
+        if not reference_time:
+            return None
+        try:
+            return dt.datetime.strptime(reference_time, "%H:%M").time().replace(second=0, microsecond=0)
+        except ValueError:
+            return None
+
+    def _next_time_from_record(self, record: dict) -> dt.time | None:
+        base_time = self._reference_time_from_record(record)
+        if not base_time:
+            return None
+        return (dt.datetime.combine(dt.date.today(), base_time) + dt.timedelta(minutes=1)).time().replace(
+            second=0,
+            microsecond=0,
+        )
 
     def _selected_professor_ids(self) -> list[int]:
         return [self.professor_options[index][0] for index in self.professor_listbox.curselection()]

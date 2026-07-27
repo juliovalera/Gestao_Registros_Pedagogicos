@@ -886,6 +886,18 @@ class DatabaseManager:
             result["evidencias"] = self._list_evidencias(conn, "rotina_docente", rotina_id)
             return result
 
+    def get_latest_rotina_docente(self) -> dict | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT id, data, hora_inicio, hora_fim
+                FROM rotinas_docentes
+                ORDER BY data DESC, COALESCE(hora_fim, hora_inicio, '') DESC, id DESC
+                LIMIT 1
+                """
+            ).fetchone()
+            return dict(row) if row else None
+
     def delete_rotina_docente(self, rotina_id: int) -> None:
         with self.connect() as conn:
             conn.execute(
