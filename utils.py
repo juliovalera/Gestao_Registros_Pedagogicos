@@ -224,38 +224,13 @@ def install_combobox_typeahead(root: tk.Misc) -> None:
                 pass
         widget._typeahead_after_id = widget.after(1200, lambda: clear_buffer(widget))
 
-    def handle_keypress(event) -> str | None:
-        widget = event.widget
-        if not isinstance(widget, ttk.Combobox):
-            return None
-        if str(widget.cget("state")).lower() != "readonly":
-            return None
-
-        if event.keysym in {"Tab", "Return", "Escape", "Up", "Down", "Left", "Right", "Home", "End", "Prior", "Next"}:
-            if event.keysym == "Escape":
-                clear_buffer(widget)
-            return None
-
-        if event.keysym == "BackSpace":
-            buffer = getattr(widget, "_typeahead_buffer", "")
-            widget._typeahead_buffer = buffer[:-1]
-            schedule_clear(widget)
-            return "break"
-
-        if not event.char or not event.char.isprintable() or event.state & 0x4:
-            return None
-
+    def find_match(widget: ttk.Combobox, current_value: str, typed_char: str) -> str | None:
         raw_values = [str(value) for value in widget.cget("values")]
         values = [value for value in raw_values if value.strip()]
         if not values:
-            return "break"
+            return None
 
-        current_value = widget.get()
         buffer = getattr(widget, "_typeahead_buffer", "")
-        typed_char = normalize_search_text(event.char)
-        if not typed_char:
-            return "break"
-
         if len(buffer) == 1 and buffer == typed_char:
             search_text = typed_char
             try:
@@ -275,13 +250,85 @@ def install_combobox_typeahead(root: tk.Misc) -> None:
 
         widget._typeahead_buffer = search_text
         schedule_clear(widget)
+        return match
 
+    def handle_key_event(widget: ttk.Combobox, event) -> str | None:
+        if str(widget.cget("state")).lower() != "readonly":
+            return None
+
+        if event.keysym in {"Tab", "Return", "Escape", "Up", "Down", "Left", "Right", "Home", "End", "Prior", "Next"}:
+            if event.keysym == "Escape":
+                clear_buffer(widget)
+            return None
+
+        if event.keysym == "BackSpace":
+            buffer = getattr(widget, "_typeahead_buffer", "")
+            widget._typeahead_buffer = buffer[:-1]
+            schedule_clear(widget)
+            return "break"
+
+        if not event.char or not event.char.isprintable() or event.state & 0x4:
+            return None
+
+        typed_char = normalize_search_text(event.char)
+        if not typed_char:
+            return "break"
+
+        match = find_match(widget, widget.get(), typed_char)
         if match:
             widget.set(match)
             widget.event_generate("<<ComboboxSelected>>")
         return "break"
 
-    root.bind_class("TCombobox", "<KeyPress>", handle_keypress, add="+")
+    def get_combobox_from_popdown_listbox(listbox_widget: tk.Listbox) -> ttk.Combobox | None:
+        widget_path = str(listbox_widget)
+        suffixes = (".popdown.f.l", ".popdown.l")
+        owner_path = ""
+        for suffix in suffixes:
+            if widget_path.endswith(suffix):
+                owner_path = widget_path[: -len(suffix)]
+                break
+        if not owner_path:
+            return None
+        try:
+            owner_widget = listbox_widget.nametowidget(owner_path)
+        except Exception:
+            return None
+        return owner_widget if isinstance(owner_widget, ttk.Combobox) else None
+
+    def handle_combobox_keypress(event) -> str | None:
+        widget = event.widget
+        if not isinstance(widget, ttk.Combobox):
+            return None
+        return handle_key_event(widget, event)
+
+    def handle_popdown_listbox_keypress(event) -> str | None:
+        widget = event.widget
+        if not isinstance(widget, tk.Listbox):
+            return None
+        combobox = get_combobox_from_popdown_listbox(widget)
+        if combobox is None:
+            return None
+
+        result = handle_key_event(combobox, event)
+        if result != "break":
+            return result
+
+        try:
+            values = list(widget.get(0, tk.END))
+            current_value = combobox.get()
+            index = values.index(current_value)
+        except ValueError:
+            return result
+
+        widget.selection_clear(0, tk.END)
+        widget.selection_set(index)
+        widget.activate(index)
+        widget.see(index)
+        return result
+
+    root.bind_class("TCombobox", "<KeyPress>", handle_combobox_keypress, add="+")
+    root.bind_class("Listbox", "<KeyPress>", handle_popdown_listbox_keypress, add="+")
     root._combobox_typeahead_installed = True
 
 
