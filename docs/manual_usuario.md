@@ -2,33 +2,11 @@
 
 Este manual apresenta um fluxo simples e acolhedor para uso diário do sistema em contextos pedagógicos.
 
-Versão atual do sistema: `1.006`
+Versão atual do sistema: `1.007`
 
 ## Finalidade
 
 O sistema foi criado para registrar, consultar e analisar intercorrências diárias, ausências de professores e rotinas docentes no contexto pedagógico escolar, de forma totalmente local.
-
-## Versionamento
-
-O sistema passa a utilizar uma numeração sequencial simples de versão.
-
-- versão inicial formal: `1.001`
-- ajuste da ordem visual dos campos no cadastro de rotina docente: `1.002`
-- contexto de atuação obrigatório no cadastro de rotina docente: `1.003`
-- inclusão da categoria `Manutenção e/ou Limpeza` no cadastro de rotina docente: `1.004`
-- sugestão automática de data e hora inicial com base no último registro: `1.005`
-- contexto de atuação obrigatório, reposicionado e sugerido automaticamente nas intercorrências: `1.006`
-- cada nova implementação ou correção acrescenta `0.001`
-
-Exemplo:
-
-- `1.001`
-- `1.002`
-- `1.003`
-- `1.004`
-- `1.005`
-- `1.006`
-- `1.007`
 
 Créditos:
 
