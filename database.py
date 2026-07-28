@@ -705,6 +705,18 @@ class DatabaseManager:
             result["evidencias"] = self._list_evidencias(conn, "intercorrencia", intercorrencia_id)
             return result
 
+    def get_latest_intercorrencia(self) -> dict | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT id, data, hora, contexto_atuacao
+                FROM intercorrencias
+                ORDER BY data DESC, hora DESC, id DESC
+                LIMIT 1
+                """
+            ).fetchone()
+            return dict(row) if row else None
+
     def delete_intercorrencia(self, intercorrencia_id: int) -> None:
         with self.connect() as conn:
             conn.execute(

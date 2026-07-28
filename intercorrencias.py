@@ -300,6 +300,8 @@ class IntercorrenciaForm(tk.Toplevel):
         self._load_references()
         if record_id:
             self._load_data()
+        else:
+            self._apply_suggested_context()
 
     def _build(self) -> None:
         self.columnconfigure(0, weight=1)
@@ -333,22 +335,22 @@ class IntercorrenciaForm(tk.Toplevel):
         self.hora_entry = TimeInput(frame, width=18)
         self.hora_entry.grid(row=1, column=1, sticky="w", pady=4)
 
-        ttk.Label(frame, text="Tipo de ocorrência *").grid(row=2, column=0, sticky="w", pady=4)
+        ttk.Label(frame, text="Contexto de atuação *").grid(row=2, column=0, sticky="w", pady=4)
+        self.context_combo = ttk.Combobox(frame, state="readonly", width=58, values=[""] + CONTEXTOS_ATUACAO)
+        self.context_combo.grid(row=2, column=1, sticky="ew", pady=4)
+
+        ttk.Label(frame, text="Tipo de ocorrência *").grid(row=3, column=0, sticky="w", pady=4)
         self.type_combo = ttk.Combobox(frame, state="readonly", width=58)
-        self.type_combo.grid(row=2, column=1, sticky="ew", pady=4)
+        self.type_combo.grid(row=3, column=1, sticky="ew", pady=4)
         self.type_combo.bind("<<ComboboxSelected>>", self._apply_default_gravity)
 
-        ttk.Label(frame, text="Espaço *").grid(row=3, column=0, sticky="w", pady=4)
+        ttk.Label(frame, text="Espaço *").grid(row=4, column=0, sticky="w", pady=4)
         self.space_combo = ttk.Combobox(frame, state="readonly", width=58)
-        self.space_combo.grid(row=3, column=1, sticky="ew", pady=4)
+        self.space_combo.grid(row=4, column=1, sticky="ew", pady=4)
 
-        ttk.Label(frame, text="Professor relacionado").grid(row=4, column=0, sticky="w", pady=4)
+        ttk.Label(frame, text="Professor relacionado").grid(row=5, column=0, sticky="w", pady=4)
         self.professor_combo = ttk.Combobox(frame, state="readonly", width=58)
-        self.professor_combo.grid(row=4, column=1, sticky="ew", pady=4)
-
-        ttk.Label(frame, text="Contexto de atuação").grid(row=5, column=0, sticky="w", pady=4)
-        self.context_combo = ttk.Combobox(frame, state="readonly", width=58, values=[""] + CONTEXTOS_ATUACAO)
-        self.context_combo.grid(row=5, column=1, sticky="ew", pady=4)
+        self.professor_combo.grid(row=5, column=1, sticky="ew", pady=4)
 
         ttk.Label(frame, text="Pessoas relacionadas").grid(row=6, column=0, sticky="w", pady=4)
         self.pessoas_entry = ttk.Entry(frame, width=62)
@@ -417,6 +419,11 @@ class IntercorrenciaForm(tk.Toplevel):
         if selected and not self.gravidade_combo.get():
             self.gravidade_combo.set(self.type_defaults.get(selected, ""))
 
+    def _apply_suggested_context(self) -> None:
+        latest_record = self.db.get_latest_intercorrencia()
+        if latest_record and latest_record.get("contexto_atuacao"):
+            self.context_combo.set(latest_record["contexto_atuacao"])
+
     def _load_data(self) -> None:
         record = self.db.get_intercorrencia(self.record_id)
         if not record:
@@ -463,10 +470,17 @@ class IntercorrenciaForm(tk.Toplevel):
             show_error("Validação", str(exc), self)
             return
 
-        if not data["data"] or not data["hora"] or not data["tipo_ocorrencia_id"] or not data["espaco_id"] or not data["descricao_objetiva"]:
+        if (
+            not data["data"]
+            or not data["hora"]
+            or not data["contexto_atuacao"]
+            or not data["tipo_ocorrencia_id"]
+            or not data["espaco_id"]
+            or not data["descricao_objetiva"]
+        ):
             show_error(
                 "Campos obrigatórios",
-                "Preencha data, hora, tipo de ocorrência, espaço e descrição objetiva.",
+                "Preencha data, hora, contexto de atuação, tipo de ocorrência, espaço e descrição objetiva.",
                 self,
             )
             return
