@@ -200,6 +200,18 @@ def install_combobox_typeahead(root: tk.Misc) -> None:
     if getattr(root, "_combobox_typeahead_installed", False):
         return
 
+    def is_ttk_combobox(widget) -> bool:
+        try:
+            return str(widget.winfo_class()) == "TCombobox"
+        except Exception:
+            return False
+
+    def is_combobox_popdown_list(widget) -> bool:
+        try:
+            return str(widget.winfo_class()) in {"ComboboxListbox", "Listbox"}
+        except Exception:
+            return False
+
     def clear_buffer(widget: ttk.Combobox) -> None:
         after_id = getattr(widget, "_typeahead_after_id", None)
         if after_id:
@@ -280,7 +292,7 @@ def install_combobox_typeahead(root: tk.Misc) -> None:
             widget.event_generate("<<ComboboxSelected>>")
         return "break"
 
-    def get_combobox_from_popdown_listbox(listbox_widget: tk.Listbox) -> ttk.Combobox | None:
+    def get_combobox_from_popdown_listbox(listbox_widget) -> ttk.Combobox | None:
         widget_path = str(listbox_widget)
         suffixes = (".popdown.f.l", ".popdown.l")
         owner_path = ""
@@ -294,17 +306,17 @@ def install_combobox_typeahead(root: tk.Misc) -> None:
             owner_widget = listbox_widget.nametowidget(owner_path)
         except Exception:
             return None
-        return owner_widget if isinstance(owner_widget, ttk.Combobox) else None
+        return owner_widget if is_ttk_combobox(owner_widget) else None
 
     def handle_combobox_keypress(event) -> str | None:
         widget = event.widget
-        if not isinstance(widget, ttk.Combobox):
+        if not is_ttk_combobox(widget):
             return None
         return handle_key_event(widget, event)
 
     def handle_popdown_listbox_keypress(event) -> str | None:
         widget = event.widget
-        if not isinstance(widget, tk.Listbox):
+        if not is_combobox_popdown_list(widget):
             return None
         combobox = get_combobox_from_popdown_listbox(widget)
         if combobox is None:
@@ -328,7 +340,7 @@ def install_combobox_typeahead(root: tk.Misc) -> None:
         return result
 
     root.bind_class("TCombobox", "<KeyPress>", handle_combobox_keypress, add="+")
-    root.bind_class("Listbox", "<KeyPress>", handle_popdown_listbox_keypress, add="+")
+    root.bind_class("ComboboxListbox", "<KeyPress>", handle_popdown_listbox_keypress, add="+")
     root._combobox_typeahead_installed = True
 
 

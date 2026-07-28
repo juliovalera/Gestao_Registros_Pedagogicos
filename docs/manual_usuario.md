@@ -2,7 +2,7 @@
 
 Este manual apresenta um fluxo simples e acolhedor para uso diário do sistema em contextos pedagógicos.
 
-Versão atual do sistema: `1.009`
+Versão atual do sistema: `1.010`
 
 ## Finalidade
 
