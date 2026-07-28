@@ -17,7 +17,17 @@ from intercorrencias import IntercorrenciasWindow
 from models import APP_CREDITS, APP_NAME, APP_TITLE, APP_VERSION
 from relatorios import RelatoriosWindow
 from rotinas import RotinasDocentesWindow
-from utils import DATA_DIR, center_window, ensure_directories, list_database_files, load_text_file, open_directory, set_text, show_error
+from utils import (
+    DATA_DIR,
+    center_window,
+    ensure_directories,
+    install_combobox_typeahead,
+    list_database_files,
+    load_text_file,
+    open_directory,
+    set_text,
+    show_error,
+)
 
 
 class MainApplication(tk.Tk):
@@ -32,6 +42,7 @@ class MainApplication(tk.Tk):
         self.title(APP_TITLE)
         center_window(self, 1080, 720)
         self.minsize(980, 650)
+        install_combobox_typeahead(self)
         self._build_style()
         self._build_menu()
         self._build_layout()

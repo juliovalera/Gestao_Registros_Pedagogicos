@@ -12,6 +12,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tkinter as tk
+import unicodedata
 from tkinter import filedialog, messagebox, ttk
 
 try:
@@ -193,6 +194,95 @@ def open_directory(path: Path, parent: tk.Misc | None = None) -> bool:
             parent,
         )
         return False
+
+
+def install_combobox_typeahead(root: tk.Misc) -> None:
+    if getattr(root, "_combobox_typeahead_installed", False):
+        return
+
+    def clear_buffer(widget: ttk.Combobox) -> None:
+        after_id = getattr(widget, "_typeahead_after_id", None)
+        if after_id:
+            try:
+                widget.after_cancel(after_id)
+            except Exception:
+                pass
+            widget._typeahead_after_id = None
+        widget._typeahead_buffer = ""
+
+    def normalize_search_text(value: str) -> str:
+        value = unicodedata.normalize("NFD", value or "")
+        value = "".join(char for char in value if unicodedata.category(char) != "Mn")
+        return value.casefold().strip()
+
+    def schedule_clear(widget: ttk.Combobox) -> None:
+        after_id = getattr(widget, "_typeahead_after_id", None)
+        if after_id:
+            try:
+                widget.after_cancel(after_id)
+            except Exception:
+                pass
+        widget._typeahead_after_id = widget.after(1200, lambda: clear_buffer(widget))
+
+    def handle_keypress(event) -> str | None:
+        widget = event.widget
+        if not isinstance(widget, ttk.Combobox):
+            return None
+        if str(widget.cget("state")).lower() != "readonly":
+            return None
+
+        if event.keysym in {"Tab", "Return", "Escape", "Up", "Down", "Left", "Right", "Home", "End", "Prior", "Next"}:
+            if event.keysym == "Escape":
+                clear_buffer(widget)
+            return None
+
+        if event.keysym == "BackSpace":
+            buffer = getattr(widget, "_typeahead_buffer", "")
+            widget._typeahead_buffer = buffer[:-1]
+            schedule_clear(widget)
+            return "break"
+
+        if not event.char or not event.char.isprintable() or event.state & 0x4:
+            return None
+
+        raw_values = [str(value) for value in widget.cget("values")]
+        values = [value for value in raw_values if value.strip()]
+        if not values:
+            return "break"
+
+        current_value = widget.get()
+        buffer = getattr(widget, "_typeahead_buffer", "")
+        typed_char = normalize_search_text(event.char)
+        if not typed_char:
+            return "break"
+
+        if len(buffer) == 1 and buffer == typed_char:
+            search_text = typed_char
+            try:
+                start_index = values.index(current_value) + 1
+            except ValueError:
+                start_index = 0
+            candidates = values[start_index:] + values[:start_index]
+        else:
+            search_text = buffer + typed_char
+            candidates = values
+
+        normalized_candidates = [(value, normalize_search_text(value)) for value in candidates]
+        match = next((value for value, normalized in normalized_candidates if normalized.startswith(search_text)), None)
+        if match is None and len(search_text) > 1:
+            match = next((value for value, normalized in normalized_candidates if normalized.startswith(typed_char)), None)
+            search_text = typed_char if match else search_text
+
+        widget._typeahead_buffer = search_text
+        schedule_clear(widget)
+
+        if match:
+            widget.set(match)
+            widget.event_generate("<<ComboboxSelected>>")
+        return "break"
+
+    root.bind_class("TCombobox", "<KeyPress>", handle_keypress, add="+")
+    root._combobox_typeahead_installed = True
 
 
 class EvidenceInput(ttk.LabelFrame):
