@@ -177,10 +177,10 @@ class MainApplication(tk.Tk):
         nav_canvas.bind("<Configure>", resize_nav_inner)
 
         buttons = [
-            ("1. Cadastros básicos", self.open_cadastros),
-            ("2. Nova intercorrência", self.open_intercorrencias),
-            ("3. Registrar ausência de professor", self.open_ausencias),
-            ("4. Rotina docente", self.open_rotinas),
+            ("1. Rotina docente", self.open_rotinas),
+            ("2. Cadastros básicos", self.open_cadastros),
+            ("3. Nova intercorrência", self.open_intercorrencias),
+            ("4. Registrar ausência de professor", self.open_ausencias),
             ("5. Consultar registros", self.open_consultas),
             ("6. Relatório do dia", lambda: self.open_relatorios("dia")),
             ("7. Relatório por período", lambda: self.open_relatorios("periodo")),
