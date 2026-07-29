@@ -988,7 +988,7 @@ class DatabaseManager:
         """
         if clauses:
             sql += " WHERE " + " AND ".join(clauses)
-        sql += " ORDER BY base.data, COALESCE(base.hora_inicio, ''), base.id"
+        sql += " ORDER BY base.id DESC"
 
         with self.connect() as conn:
             return self._rows_to_dicts(conn.execute(sql, params).fetchall())
@@ -1072,7 +1072,7 @@ class DatabaseManager:
         params = [PROFESSOR_TODOS] + params
         if clauses:
             sql += " WHERE " + " AND ".join(clauses)
-        sql += " ORDER BY base.data, base.hora, base.id"
+        sql += " ORDER BY base.id DESC"
 
         with self.connect() as conn:
             return self._rows_to_dicts(conn.execute(sql, params).fetchall())
