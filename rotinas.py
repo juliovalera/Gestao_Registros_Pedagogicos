@@ -277,11 +277,14 @@ class RotinaDocenteForm(tk.Toplevel):
         self.on_save = on_save
         self.professor_options: list[tuple[int, str]] = []
         self.space_map: dict[str, int | None] = {"": None}
+        self._allow_close = False
+        self._initial_state: dict = {}
 
         self.title("Cadastro de rotina docente")
         self.resizable(True, True)
         self.grab_set()
         center_window(self, 920, 820, parent=parent)
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
 
         self._build()
         self._load_references()
@@ -289,6 +292,7 @@ class RotinaDocenteForm(tk.Toplevel):
             self._load_data()
         else:
             self._apply_suggested_defaults()
+        self._initial_state = self._capture_form_state()
 
     def _build(self) -> None:
         self.columnconfigure(0, weight=1)
@@ -378,7 +382,7 @@ class RotinaDocenteForm(tk.Toplevel):
         button_frame = ttk.Frame(frame)
         button_frame.grid(row=16, column=0, columnspan=2, sticky="e", pady=(12, 0))
         ttk.Button(button_frame, text="Salvar", command=self.save).pack(side="left", padx=4)
-        ttk.Button(button_frame, text="Cancelar", command=self.destroy).pack(side="left", padx=4)
+        ttk.Button(button_frame, text="Cancelar", command=self._on_close).pack(side="left", padx=4)
 
     def _add_text_field(self, frame: ttk.Frame, row: int, label: str, height: int) -> tk.Text:
         ttk.Label(frame, text=label).grid(row=row, column=0, sticky="nw", pady=4)
@@ -475,7 +479,62 @@ class RotinaDocenteForm(tk.Toplevel):
     def _clear_professor_selection(self) -> None:
         self.professor_listbox.selection_clear(0, tk.END)
 
-    def save(self) -> None:
+    def _capture_form_state(self) -> dict:
+        evidence_signature = [
+            (
+                item.get("id"),
+                item.get("nome_arquivo") or "",
+                item.get("dados") or b"",
+            )
+            for item in self.evidence_input.get_items()
+        ]
+        return {
+            "data": self.data_entry.get().strip(),
+            "hora_inicio": self.hora_inicio_entry.get().strip(),
+            "hora_fim": self.hora_fim_entry.get().strip(),
+            "professor_ids": tuple(self._selected_professor_ids()),
+            "contexto_atuacao": self.context_combo.get().strip(),
+            "categoria": self.category_combo.get().strip(),
+            "espaco": self.space_combo.get().strip(),
+            "turma_ou_publico": self.publico_entry.get().strip(),
+            "titulo": self.titulo_entry.get().strip(),
+            "tags": self.tags_entry.get().strip(),
+            "descricao_atividade": get_text(self.descricao_text),
+            "objetivos": get_text(self.objetivos_text),
+            "recursos_utilizados": get_text(self.recursos_text),
+            "encaminhamentos": get_text(self.encaminhamentos_text),
+            "observacoes": get_text(self.observacoes_text),
+            "evidencias": tuple(evidence_signature),
+        }
+
+    def _has_unsaved_changes(self) -> bool:
+        return self._capture_form_state() != self._initial_state
+
+    def _close_without_prompt(self) -> None:
+        self._allow_close = True
+        self.destroy()
+
+    def _on_close(self) -> None:
+        if self._allow_close:
+            self.destroy()
+            return
+        if not self._has_unsaved_changes():
+            self._close_without_prompt()
+            return
+
+        should_save = messagebox.askyesnocancel(
+            "Alterações não salvas",
+            "Há alterações não salvas neste cadastro.\n\nDeseja salvar antes de sair?",
+            parent=self,
+        )
+        if should_save is None:
+            return
+        if should_save is False:
+            self._close_without_prompt()
+            return
+        self.save()
+
+    def save(self) -> bool:
         try:
             data = {
                 "data": normalize_date(self.data_entry.get()),
@@ -497,7 +556,7 @@ class RotinaDocenteForm(tk.Toplevel):
             }
         except ValueError as exc:
             show_error("Validação", str(exc), self)
-            return
+            return False
 
         if (
             not data["data"]
@@ -512,14 +571,16 @@ class RotinaDocenteForm(tk.Toplevel):
                 "Preencha data, ao menos um professor, contexto de atuação, categoria, título e descrição da atividade.",
                 self,
             )
-            return
+            return False
 
         if not confirm_end_time_after_start(data["hora_inicio"], data["hora_fim"], self):
             self.hora_fim_entry.focus_set()
-            return
+            return False
 
         self.db.save_rotina_docente(data, self.record_id)
         if self.on_save:
             self.on_save()
+        self._initial_state = self._capture_form_state()
         show_info("Registro salvo", "Rotina docente salva com sucesso.", self)
-        self.destroy()
+        self._close_without_prompt()
+        return True
