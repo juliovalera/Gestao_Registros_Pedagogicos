@@ -178,6 +178,37 @@ def show_warning(title: str, message: str, parent: tk.Misc | None = None) -> Non
     messagebox.showwarning(title, message, parent=parent)
 
 
+def confirm_end_time_after_start(
+    hora_inicio: str,
+    hora_fim: str,
+    parent: tk.Misc | None = None,
+    title: str = "Confirmar horário",
+) -> bool:
+    hora_inicio = (hora_inicio or "").strip()
+    hora_fim = (hora_fim or "").strip()
+    if not hora_inicio or not hora_fim:
+        return True
+
+    try:
+        inicio = dt.datetime.strptime(hora_inicio, "%H:%M").time()
+        fim = dt.datetime.strptime(hora_fim, "%H:%M").time()
+    except ValueError:
+        return True
+
+    if fim >= inicio:
+        return True
+
+    return ask_yes_no(
+        title,
+        (
+            f"O horário final ({hora_fim}) está menor que o horário inicial ({hora_inicio}).\n\n"
+            "Isso pode indicar um registro que terminou no dia seguinte ou apenas um engano de digitação.\n\n"
+            "Deseja salvar mesmo assim?"
+        ),
+        parent=parent,
+    )
+
+
 def open_directory(path: Path, parent: tk.Misc | None = None) -> bool:
     try:
         if sys.platform.startswith("win"):

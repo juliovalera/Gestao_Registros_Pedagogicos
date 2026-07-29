@@ -7,6 +7,7 @@ from tkinter import messagebox, ttk
 
 from models import CONTEXTOS_ATUACAO, OPCOES_TRIPLAS, TIPOS_AUSENCIA
 from utils import (
+    confirm_end_time_after_start,
     DateInput,
     TimeInput,
     center_window,
@@ -442,6 +443,14 @@ class AusenciaForm(tk.Toplevel):
                 "Preencha ao menos impacto observado ou observações.",
                 self,
             )
+            return
+
+        if not self.ausencia_integral_var.get() and not confirm_end_time_after_start(
+            data["hora_inicio"],
+            data["hora_fim"],
+            self,
+        ):
+            self.hora_fim_entry.focus_set()
             return
 
         self.db.save_ausencia(data, self.record_id)

@@ -8,6 +8,7 @@ from tkinter import messagebox, ttk
 
 from models import CONTEXTOS_ATUACAO, ROTINA_DOCENTE_CATEGORIAS
 from utils import (
+    confirm_end_time_after_start,
     DateInput,
     EvidenceInput,
     TimeInput,
@@ -511,6 +512,10 @@ class RotinaDocenteForm(tk.Toplevel):
                 "Preencha data, ao menos um professor, contexto de atuação, categoria, título e descrição da atividade.",
                 self,
             )
+            return
+
+        if not confirm_end_time_after_start(data["hora_inicio"], data["hora_fim"], self):
+            self.hora_fim_entry.focus_set()
             return
 
         self.db.save_rotina_docente(data, self.record_id)
