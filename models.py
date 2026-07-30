@@ -1,12 +1,14 @@
 """Constantes e listas de apoio do sistema pedagógico."""
 
 APP_NAME = "Gestão de Registros Pedagógicos"
-APP_VERSION = "1.016"
+APP_VERSION = "1.025"
 APP_TITLE = f"{APP_NAME} v{APP_VERSION}"
 APP_CREDITS = (
     "Créditos: Professor Júlio César Valera\n"
     "Professor de Matemática, Programação e Robótica\n"
-    "Registros Pedagógicos - Ribeirão Preto"
+    "Registros Pedagógicos - Ribeirão Preto\n"
+    "juliovalera@professor.educacap.sp.gov.br\n"
+    "julio@projetos.tec.br"
 )
 
 PROFESSOR_SITUACOES = [
