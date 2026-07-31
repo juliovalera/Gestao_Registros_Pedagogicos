@@ -73,6 +73,9 @@ class BaseConsultaTab(ttk.Frame):
 
         self.details_text = tk.Text(details_frame, wrap="word")
         self.details_text.grid(row=0, column=0, sticky="nsew")
+        details_scroll = ttk.Scrollbar(details_frame, orient="vertical", command=self.details_text.yview)
+        details_scroll.grid(row=0, column=1, sticky="ns")
+        self.details_text.configure(yscrollcommand=details_scroll.set)
         self.details_text.config(state="disabled")
 
 
@@ -592,8 +595,13 @@ class EstatisticasTab(ttk.Frame):
 
         summary_frame = ttk.LabelFrame(body, text="Resumo estatístico")
         summary_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        summary_frame.columnconfigure(0, weight=1)
+        summary_frame.rowconfigure(0, weight=1)
         self.text = tk.Text(summary_frame, wrap="word")
-        self.text.pack(fill="both", expand=True)
+        self.text.grid(row=0, column=0, sticky="nsew")
+        summary_scroll = ttk.Scrollbar(summary_frame, orient="vertical", command=self.text.yview)
+        summary_scroll.grid(row=0, column=1, sticky="ns")
+        self.text.configure(yscrollcommand=summary_scroll.set)
         self.text.config(state="disabled")
 
         chart_frame = ttk.LabelFrame(body, text="Gráficos")

@@ -2,7 +2,7 @@
 
 Sistema local em Python 3 para registrar, consultar, analisar e exportar informações da rotina pedagógica escolar de forma organizada, cronológica e profissional.
 
-Versão atual: `1.026`
+Versão atual: `1.027`
 
 Status desta versão:
 

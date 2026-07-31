@@ -388,8 +388,13 @@ class MainApplication(tk.Tk):
         center_window(window, 900, 640)
         frame = ttk.Frame(window, padding=10)
         frame.pack(fill="both", expand=True)
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(0, weight=1)
         text = tk.Text(frame, wrap="word")
-        text.pack(fill="both", expand=True)
+        text.grid(row=0, column=0, sticky="nsew")
+        scroll = ttk.Scrollbar(frame, orient="vertical", command=text.yview)
+        scroll.grid(row=0, column=1, sticky="ns")
+        text.configure(yscrollcommand=scroll.set)
         set_text(text, load_text_file(path))
 
     def show_manual(self) -> None:

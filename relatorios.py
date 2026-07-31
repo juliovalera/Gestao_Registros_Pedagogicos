@@ -177,6 +177,9 @@ class RelatoriosWindow(tk.Toplevel):
         preview_frame.rowconfigure(0, weight=1)
         self.preview_text = tk.Text(preview_frame, wrap="word")
         self.preview_text.grid(row=0, column=0, sticky="nsew")
+        preview_scroll = ttk.Scrollbar(preview_frame, orient="vertical", command=self.preview_text.yview)
+        preview_scroll.grid(row=0, column=1, sticky="ns")
+        self.preview_text.configure(yscrollcommand=preview_scroll.set)
         self.preview_text.config(state="disabled")
 
     def _load_references(self) -> None:

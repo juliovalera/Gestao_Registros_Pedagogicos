@@ -122,6 +122,9 @@ class AusenciasWindow(tk.Toplevel):
         details_frame.rowconfigure(0, weight=1)
         self.details_text = tk.Text(details_frame, wrap="word")
         self.details_text.grid(row=0, column=0, sticky="nsew")
+        details_scroll = ttk.Scrollbar(details_frame, orient="vertical", command=self.details_text.yview)
+        details_scroll.grid(row=0, column=1, sticky="ns")
+        self.details_text.configure(yscrollcommand=details_scroll.set)
         self.details_text.config(state="disabled")
 
     def refresh_filters(self) -> None:
