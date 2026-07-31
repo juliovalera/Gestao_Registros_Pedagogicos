@@ -5,7 +5,7 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk
 
-from models import APP_NAME
+from models import APP_NAME, APP_VERSION
 from utils import center_window, show_error, show_info, validate_password_strength
 
 
@@ -19,43 +19,134 @@ class LoginWindow(tk.Toplevel):
         self.transient(parent)
         self.grab_set()
         self.protocol("WM_DELETE_WINDOW", self._cancel)
-        center_window(self, 460, 280)
+        self.resizable(False, False)
+        center_window(self, 660, 430)
 
+        self._build_style()
         self._build()
         self.lift()
         self.focus_force()
 
-    def _build(self) -> None:
-        frame = ttk.Frame(self, padding=16)
-        frame.pack(fill="both", expand=True)
-        frame.columnconfigure(1, weight=1)
+    def _build_style(self) -> None:
+        style = ttk.Style(self)
+        style.configure("LoginRoot.TFrame", background="#F3F6F8")
+        style.configure("LoginHero.TFrame", background="#FFFFFF", relief="solid", borderwidth=1)
+        style.configure("LoginHeroInner.TFrame", background="#FFFFFF")
+        style.configure("LoginCard.TFrame", background="#FFFFFF", relief="solid", borderwidth=1)
+        style.configure("LoginForm.TFrame", background="#FFFFFF")
+        style.configure(
+            "LoginHeroTitle.TLabel",
+            background="#FFFFFF",
+            foreground="#17323E",
+            font=("Segoe UI", 18, "bold"),
+        )
+        style.configure(
+            "LoginHeroSubtitle.TLabel",
+            background="#FFFFFF",
+            foreground="#5B6B74",
+            font=("Segoe UI", 10),
+        )
+        style.configure(
+            "LoginVersion.TLabel",
+            background="#FFFFFF",
+            foreground="#5B6B74",
+            font=("Segoe UI", 10, "bold"),
+        )
+        style.configure(
+            "LoginSectionTitle.TLabel",
+            background="#FFFFFF",
+            foreground="#17323E",
+            font=("Segoe UI", 14, "bold"),
+            anchor="center",
+        )
+        style.configure(
+            "LoginSectionBody.TLabel",
+            background="#FFFFFF",
+            foreground="#5B6B74",
+            font=("Segoe UI", 10),
+            anchor="center",
+        )
+        style.configure(
+            "LoginField.TLabel",
+            background="#FFFFFF",
+            foreground="#17323E",
+            font=("Segoe UI", 11, "bold"),
+        )
+        style.configure(
+            "LoginInfo.TLabel",
+            background="#FFFFFF",
+            foreground="#7A5C00",
+            font=("Segoe UI", 9),
+        )
 
-        ttk.Label(frame, text=APP_NAME, font=("Segoe UI", 14, "bold")).grid(
-            row=0, column=0, columnspan=2, sticky="w", pady=(0, 10)
+    def _build(self) -> None:
+        self.configure(bg="#F3F6F8")
+
+        root = ttk.Frame(self, style="LoginRoot.TFrame", padding=18)
+        root.pack(fill="both", expand=True)
+        root.columnconfigure(0, weight=1)
+
+        header = ttk.Frame(root, style="LoginHero.TFrame", padding=(22, 16))
+        header.grid(row=0, column=0, sticky="ew", pady=(0, 14))
+        header.columnconfigure(0, weight=1)
+
+        title_row = ttk.Frame(header, style="LoginHeroInner.TFrame")
+        title_row.grid(row=0, column=0, sticky="ew")
+        title_row.columnconfigure(0, weight=1)
+        ttk.Label(title_row, text=APP_NAME, style="LoginHeroTitle.TLabel").grid(row=0, column=0, sticky="w")
+        ttk.Label(title_row, text=f"Versão {APP_VERSION}", style="LoginVersion.TLabel").grid(
+            row=0, column=1, sticky="e", padx=(16, 0)
         )
         ttk.Label(
-            frame,
-            text="Informe usuário e senha para acessar os registros locais.",
-            wraplength=400,
+            header,
+            text="Acesso protegido por usuário e senha para abrir os registros locais.",
+            style="LoginHeroSubtitle.TLabel",
+            wraplength=540,
             justify="left",
-        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 12))
+        ).grid(row=1, column=0, sticky="w", pady=(8, 0))
 
-        ttk.Label(frame, text="Usuário").grid(row=2, column=0, sticky="w", pady=4)
-        self.username_entry = ttk.Entry(frame, width=34)
-        self.username_entry.grid(row=2, column=1, sticky="ew", pady=4)
+        card = ttk.Frame(root, style="LoginCard.TFrame", padding=20)
+        card.grid(row=1, column=0, sticky="ew")
+        card.columnconfigure(0, weight=1)
 
-        ttk.Label(frame, text="Senha").grid(row=3, column=0, sticky="w", pady=4)
-        self.password_entry = ttk.Entry(frame, width=34, show="*")
-        self.password_entry.grid(row=3, column=1, sticky="ew", pady=4)
+        intro = ttk.Frame(card, style="LoginForm.TFrame")
+        intro.grid(row=0, column=0, pady=(0, 16))
+
+        ttk.Label(intro, text="Acesso ao sistema", style="LoginSectionTitle.TLabel", justify="center").grid(
+            row=0, column=0, sticky="n", pady=(0, 8)
+        )
+        ttk.Label(
+            intro,
+            text="Informe usuário e senha para acessar os registros locais.",
+            style="LoginSectionBody.TLabel",
+            wraplength=540,
+            justify="center",
+        ).grid(row=1, column=0, sticky="n")
+
+        form = ttk.Frame(card, style="LoginForm.TFrame")
+        form.grid(row=1, column=0, pady=(0, 4))
+        form.columnconfigure(1, weight=1)
+
+        ttk.Label(form, text="Usuário", style="LoginField.TLabel").grid(
+            row=0, column=0, sticky="w", pady=6, padx=(0, 12)
+        )
+        self.username_entry = ttk.Entry(form, width=34)
+        self.username_entry.grid(row=0, column=1, sticky="w", pady=6)
+
+        ttk.Label(form, text="Senha", style="LoginField.TLabel").grid(
+            row=1, column=0, sticky="w", pady=6, padx=(0, 12)
+        )
+        self.password_entry = ttk.Entry(form, width=34, show="*")
+        self.password_entry.grid(row=1, column=1, sticky="w", pady=6)
         self.password_entry.bind("<Return>", lambda _event: self.login())
 
-        self.info_label = ttk.Label(frame, foreground="#7a5c00", wraplength=400, justify="left")
-        self.info_label.grid(row=4, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        self.info_label = ttk.Label(card, style="LoginInfo.TLabel", wraplength=540, justify="left")
+        self.info_label.grid(row=2, column=0, sticky="w", pady=(10, 0))
 
-        button_frame = ttk.Frame(frame)
-        button_frame.grid(row=5, column=0, columnspan=2, sticky="e", pady=(16, 0))
-        ttk.Button(button_frame, text="Entrar", command=self.login).pack(side="left", padx=4)
-        ttk.Button(button_frame, text="Cancelar", command=self._cancel).pack(side="left", padx=4)
+        button_frame = ttk.Frame(card, style="LoginForm.TFrame")
+        button_frame.grid(row=3, column=0, pady=(18, 0))
+        ttk.Button(button_frame, text="Entrar", command=self.login).pack(side="left", padx=(0, 8))
+        ttk.Button(button_frame, text="Cancelar", command=self._cancel).pack(side="left")
 
         if not self.db.has_any_user():
             self.info_label.config(
@@ -65,7 +156,7 @@ class LoginWindow(tk.Toplevel):
                 )
             )
             ttk.Button(button_frame, text="Criar primeiro usuário", command=self.open_first_user_setup).pack(
-                side="left", padx=4
+                side="left", padx=(0, 8)
             )
 
         self.username_entry.focus_set()
