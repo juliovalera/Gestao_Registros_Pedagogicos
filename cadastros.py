@@ -72,6 +72,7 @@ class CadastroProfessoresTab(ttk.Frame):
         for column in self.columns:
             self.tree.heading(column, text=headings[column])
             self.tree.column(column, width=widths[column], anchor="w")
+        self.tree.tag_configure("professor_inativo", foreground="#B22222")
         self.tree.pack(side="left", fill="both", expand=True)
 
         scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
@@ -82,6 +83,8 @@ class CadastroProfessoresTab(ttk.Frame):
         for item in self.tree.get_children():
             self.tree.delete(item)
         for professor in self.db.list_professors(include_inactive=True):
+            situacao = professor["situacao"]
+            tags = ("professor_inativo",) if situacao != "ativo" else ()
             self.tree.insert(
                 "",
                 "end",
@@ -92,9 +95,10 @@ class CadastroProfessoresTab(ttk.Frame):
                     professor["nome_curto"],
                     professor.get("area_atuacao") or "",
                     professor.get("espaco_principal_nome") or "",
-                    professor["situacao"],
+                    situacao,
                     professor["vinculo"],
                 ),
+                tags=tags,
             )
 
     def selected_id(self) -> int | None:
