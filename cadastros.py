@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import tkinter as tk
+import unicodedata
 from tkinter import ttk
 
 from models import NIVEIS_GRAVIDADE, PROFESSOR_SITUACOES, PROFESSOR_VINCULOS, SITUACOES_ATIVO_INATIVO
@@ -82,7 +83,14 @@ class CadastroProfessoresTab(ttk.Frame):
     def refresh(self) -> None:
         for item in self.tree.get_children():
             self.tree.delete(item)
-        for professor in self.db.list_professors(include_inactive=True):
+        professores = self.db.list_professors(include_inactive=True)
+        professores.sort(
+            key=lambda professor: (
+                0 if professor["situacao"] == "ativo" else 1,
+                self._sort_text(professor["nome_completo"]),
+            )
+        )
+        for professor in professores:
             situacao = professor["situacao"]
             tags = ("professor_inativo",) if situacao != "ativo" else ()
             self.tree.insert(
@@ -100,6 +108,12 @@ class CadastroProfessoresTab(ttk.Frame):
                 ),
                 tags=tags,
             )
+
+    @staticmethod
+    def _sort_text(value: str) -> str:
+        normalized = unicodedata.normalize("NFKD", value)
+        without_accents = "".join(char for char in normalized if not unicodedata.combining(char))
+        return without_accents.casefold()
 
     def selected_id(self) -> int | None:
         selected = self.tree.selection()
