@@ -11,6 +11,11 @@ from models import (
     ESPACOS_INICIAIS,
     ESPACO_TODOS,
     GRAVIDADE_ORDEM,
+    MULTIPLICA_ENCONTRO_PAPEIS,
+    MULTIPLICA_TURMA_SITUACOES,
+    MODO_MULTIPLICA_PADRAO,
+    MODO_MULTIPLICA_LABELS,
+    MODOS_MULTIPLICA,
     PROFESSORES_EXEMPLO,
     PROFESSOR_TODOS,
     ROTINA_DOCENTE_CATEGORIAS,
@@ -55,10 +60,13 @@ class DatabaseManager:
                     nome_completo TEXT NOT NULL,
                     nome_usuario TEXT NOT NULL UNIQUE,
                     senha_hash TEXT NOT NULL,
+                    modo_multiplica TEXT NOT NULL DEFAULT 'nenhum',
+                    professor_id INTEGER,
                     situacao TEXT NOT NULL DEFAULT 'ativo',
                     ultimo_login TEXT,
                     data_cadastro TEXT NOT NULL,
-                    data_atualizacao TEXT NOT NULL
+                    data_atualizacao TEXT NOT NULL,
+                    FOREIGN KEY (professor_id) REFERENCES professores(id) ON UPDATE CASCADE
                 );
 
                 CREATE TABLE IF NOT EXISTS espacos (
@@ -177,6 +185,40 @@ class DatabaseManager:
                     data_hora_registro TEXT NOT NULL
                 );
 
+                CREATE TABLE IF NOT EXISTS multiplica_turmas (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    professor_id INTEGER NOT NULL,
+                    codigo_turma TEXT NOT NULL,
+                    dia_semana TEXT NOT NULL,
+                    horario TEXT NOT NULL,
+                    componente TEXT NOT NULL,
+                    situacao TEXT NOT NULL DEFAULT 'ativa',
+                    data_cadastro TEXT NOT NULL,
+                    data_atualizacao TEXT NOT NULL,
+                    FOREIGN KEY (professor_id) REFERENCES professores(id) ON UPDATE CASCADE,
+                    UNIQUE (professor_id, codigo_turma)
+                );
+
+                CREATE TABLE IF NOT EXISTS multiplica_encontros (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    professor_id INTEGER NOT NULL,
+                    turma_id INTEGER NOT NULL,
+                    data TEXT NOT NULL,
+                    pauta_numero INTEGER,
+                    hora_inicio TEXT,
+                    hora_termino TEXT,
+                    duracao TEXT,
+                    participantes INTEGER NOT NULL DEFAULT 0,
+                    papel_no_encontro TEXT NOT NULL DEFAULT 'multiplicador',
+                    situacao TEXT NOT NULL DEFAULT 'planejado',
+                    texto_automatico TEXT,
+                    observacao TEXT,
+                    data_cadastro TEXT NOT NULL,
+                    data_atualizacao TEXT NOT NULL,
+                    FOREIGN KEY (professor_id) REFERENCES professores(id) ON UPDATE CASCADE,
+                    FOREIGN KEY (turma_id) REFERENCES multiplica_turmas(id) ON UPDATE CASCADE
+                );
+
                 CREATE INDEX IF NOT EXISTS idx_intercorrencias_data ON intercorrencias(data);
                 CREATE INDEX IF NOT EXISTS idx_intercorrencias_tipo ON intercorrencias(tipo_ocorrencia_id);
                 CREATE INDEX IF NOT EXISTS idx_intercorrencias_professor ON intercorrencias(professor_relacionado_id);
@@ -190,13 +232,27 @@ class DatabaseManager:
                 CREATE INDEX IF NOT EXISTS idx_rotinas_categoria ON rotinas_docentes(categoria);
                 CREATE INDEX IF NOT EXISTS idx_rotinas_rel_professor ON rotinas_docentes_professores(professor_id);
                 CREATE INDEX IF NOT EXISTS idx_evidencias_tipo_registro ON evidencias_registros(tipo_registro, registro_id);
+                CREATE INDEX IF NOT EXISTS idx_multiplica_turmas_professor ON multiplica_turmas(professor_id);
+                CREATE INDEX IF NOT EXISTS idx_multiplica_encontros_professor ON multiplica_encontros(professor_id);
+                CREATE INDEX IF NOT EXISTS idx_multiplica_encontros_turma ON multiplica_encontros(turma_id);
+                CREATE INDEX IF NOT EXISTS idx_multiplica_encontros_data ON multiplica_encontros(data);
                 """
             )
             self._ensure_column(conn, "ausencias_professores", "ausencia_integral", "TEXT NOT NULL DEFAULT 'não'")
+            self._ensure_column(conn, "usuarios", "modo_multiplica", "TEXT NOT NULL DEFAULT 'nenhum'")
+            self._ensure_column(conn, "usuarios", "professor_id", "INTEGER")
             self._ensure_column(conn, "intercorrencias", "todos_professores", "TEXT NOT NULL DEFAULT 'não'")
             self._ensure_column(conn, "intercorrencias", "contexto_atuacao", "TEXT")
             self._ensure_column(conn, "ausencias_professores", "contexto_atuacao", "TEXT")
             self._ensure_column(conn, "rotinas_docentes", "contexto_atuacao", "TEXT")
+            self._ensure_column(conn, "multiplica_turmas", "situacao", "TEXT NOT NULL DEFAULT 'ativa'")
+            self._ensure_column(conn, "multiplica_encontros", "situacao", "TEXT NOT NULL DEFAULT 'planejado'")
+            self._ensure_column(
+                conn,
+                "multiplica_encontros",
+                "papel_no_encontro",
+                "TEXT NOT NULL DEFAULT 'multiplicador'",
+            )
             self._seed_reference_data(conn)
             self._seed_sample_data(conn)
             self._migrate_rotinas_docentes_professores(conn)
@@ -259,6 +315,238 @@ class DatabaseManager:
         with self.connect() as conn:
             row = conn.execute("SELECT * FROM usuarios WHERE id = ?", (user_id,)).fetchone()
             return dict(row) if row else None
+
+    def get_user_multiplica_settings(self, user_id: int) -> dict:
+        user = self.get_user_by_id(user_id)
+        if not user:
+            raise ValueError("Usuário não encontrado.")
+        return {
+            "modo_multiplica": user.get("modo_multiplica") or MODO_MULTIPLICA_PADRAO,
+            "professor_id": user.get("professor_id"),
+        }
+
+    def update_user_multiplica_settings(
+        self,
+        user_id: int,
+        modo_multiplica: str,
+        professor_id: int | None,
+    ) -> dict:
+        modos_validos = {valor for valor, _rotulo in MODOS_MULTIPLICA}
+        if modo_multiplica not in modos_validos:
+            raise ValueError("Modo do Programa Multiplica inválido.")
+        if professor_id is not None and not self.get_professor(professor_id):
+            raise ValueError("Professor vinculado não encontrado.")
+
+        now = current_timestamp()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE usuarios
+                SET modo_multiplica = ?, professor_id = ?, data_atualizacao = ?
+                WHERE id = ?
+                """,
+                (modo_multiplica, professor_id, now, user_id),
+            )
+        updated_user = self.get_user_by_id(user_id)
+        if not updated_user:
+            raise ValueError("Não foi possível recarregar o usuário após salvar.")
+        return updated_user
+
+    def get_user_multiplica_mode_label(self, user: dict | None) -> str:
+        if not user:
+            return MODO_MULTIPLICA_LABELS[MODO_MULTIPLICA_PADRAO]
+        return MODO_MULTIPLICA_LABELS.get(
+            user.get("modo_multiplica") or MODO_MULTIPLICA_PADRAO,
+            MODO_MULTIPLICA_LABELS[MODO_MULTIPLICA_PADRAO],
+        )
+
+    def list_multiplica_turmas(self, professor_id: int, include_inactive: bool = True) -> list[dict]:
+        sql = """
+            SELECT *
+            FROM multiplica_turmas
+            WHERE professor_id = ?
+        """
+        params: list = [professor_id]
+        if not include_inactive:
+            sql += " AND situacao = 'ativa'"
+        sql += " ORDER BY situacao = 'ativa' DESC, codigo_turma COLLATE NOCASE, id DESC"
+        with self.connect() as conn:
+            return self._rows_to_dicts(conn.execute(sql, params).fetchall())
+
+    def get_multiplica_turma(self, turma_id: int) -> dict | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT *
+                FROM multiplica_turmas
+                WHERE id = ?
+                """,
+                (turma_id,),
+            ).fetchone()
+            return dict(row) if row else None
+
+    def save_multiplica_turma(self, data: dict, turma_id: int | None = None) -> int:
+        professor_id = int(data["professor_id"])
+        codigo_turma = str(data["codigo_turma"]).strip()
+        dia_semana = str(data["dia_semana"]).strip().upper()
+        horario = str(data["horario"]).strip()
+        componente = str(data["componente"]).strip()
+        situacao = str(data.get("situacao") or "ativa").strip().lower()
+
+        if not self.get_professor(professor_id):
+            raise ValueError("Professor vinculado não encontrado.")
+        if not codigo_turma:
+            raise ValueError("Informe o código da turma.")
+        if not dia_semana:
+            raise ValueError("Selecione o dia da semana.")
+        if not horario:
+            raise ValueError("Informe o horário da turma.")
+        if not componente:
+            raise ValueError("Informe o tema ou componente.")
+        if situacao not in MULTIPLICA_TURMA_SITUACOES:
+            raise ValueError("Situação da turma inválida.")
+
+        now = current_timestamp()
+        with self.connect() as conn:
+            try:
+                if turma_id is None:
+                    cursor = conn.execute(
+                        """
+                        INSERT INTO multiplica_turmas (
+                            professor_id, codigo_turma, dia_semana, horario, componente,
+                            situacao, data_cadastro, data_atualizacao
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (professor_id, codigo_turma, dia_semana, horario, componente, situacao, now, now),
+                    )
+                    return int(cursor.lastrowid)
+                conn.execute(
+                    """
+                    UPDATE multiplica_turmas
+                    SET professor_id = ?, codigo_turma = ?, dia_semana = ?, horario = ?,
+                        componente = ?, situacao = ?, data_atualizacao = ?
+                    WHERE id = ?
+                    """,
+                    (professor_id, codigo_turma, dia_semana, horario, componente, situacao, now, turma_id),
+                )
+                return int(turma_id)
+            except sqlite3.IntegrityError as exc:
+                raise ValueError("Já existe uma turma com esse código para este professor.") from exc
+
+    def update_multiplica_turma_status(self, turma_id: int, situacao: str) -> None:
+        situacao = (situacao or "").strip().lower()
+        if situacao not in MULTIPLICA_TURMA_SITUACOES:
+            raise ValueError("Situação da turma inválida.")
+        with self.connect() as conn:
+            conn.execute(
+                "UPDATE multiplica_turmas SET situacao = ?, data_atualizacao = ? WHERE id = ?",
+                (situacao, current_timestamp(), turma_id),
+            )
+
+    def list_multiplica_encontros_mes(self, professor_id: int, ano: int, mes: int) -> list[dict]:
+        inicio = f"{ano:04d}-{mes:02d}-01"
+        if mes == 12:
+            fim = f"{ano + 1:04d}-01-01"
+        else:
+            fim = f"{ano:04d}-{mes + 1:02d}-01"
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                    e.*,
+                    t.codigo_turma,
+                    (
+                        SELECT COUNT(*)
+                        FROM evidencias_registros ev
+                        WHERE ev.tipo_registro = 'multiplica_encontro' AND ev.registro_id = e.id
+                    ) AS imagens
+                FROM multiplica_encontros e
+                INNER JOIN multiplica_turmas t ON t.id = e.turma_id
+                WHERE e.professor_id = ?
+                  AND e.data >= ?
+                  AND e.data < ?
+                ORDER BY e.data, COALESCE(e.hora_inicio, ''), e.id
+                """,
+                (professor_id, inicio, fim),
+            ).fetchall()
+            return self._rows_to_dicts(rows)
+
+    def get_multiplica_encontro(self, encontro_id: int) -> dict | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT
+                    e.*,
+                    t.codigo_turma,
+                    t.componente AS turma_componente
+                FROM multiplica_encontros e
+                INNER JOIN multiplica_turmas t ON t.id = e.turma_id
+                WHERE e.id = ?
+                """,
+                (encontro_id,),
+            ).fetchone()
+            if not row:
+                return None
+            result = dict(row)
+            result["evidencias"] = self._list_evidencias(conn, "multiplica_encontro", encontro_id)
+            return result
+
+    def save_multiplica_encontro(self, data: dict, encontro_id: int | None = None) -> int:
+        professor_id = int(data["professor_id"])
+        turma_id = int(data["turma_id"])
+        papel_no_encontro = str(data.get("papel_no_encontro") or "multiplicador").strip()
+        payload = (
+            data["data"],
+            clean_optional(str(data.get("pauta_numero") or "")),
+            clean_optional(data.get("hora_inicio")),
+            clean_optional(data.get("hora_termino")),
+            clean_optional(data.get("duracao")),
+            int(data.get("participantes") or 0),
+            papel_no_encontro,
+            str(data.get("situacao") or "planejado").strip(),
+            clean_optional(data.get("texto_automatico")),
+            clean_optional(data.get("observacao")),
+        )
+
+        turma = self.get_multiplica_turma(turma_id)
+        if not self.get_professor(professor_id):
+            raise ValueError("Professor vinculado não encontrado.")
+        if not turma or int(turma["professor_id"]) != professor_id:
+            raise ValueError("A turma selecionada não pertence ao professor vinculado.")
+        if not str(data.get("data") or "").strip():
+            raise ValueError("Informe a data do encontro.")
+        if papel_no_encontro not in MULTIPLICA_ENCONTRO_PAPEIS:
+            raise ValueError("O papel no encontro informado é inválido.")
+
+        now = current_timestamp()
+        with self.connect() as conn:
+            if encontro_id is None:
+                cursor = conn.execute(
+                    """
+                    INSERT INTO multiplica_encontros (
+                        professor_id, turma_id, data, pauta_numero, hora_inicio, hora_termino,
+                        duracao, participantes, papel_no_encontro, situacao, texto_automatico, observacao,
+                        data_cadastro, data_atualizacao
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (professor_id, turma_id, *payload, now, now),
+                )
+                encontro_id = int(cursor.lastrowid)
+            else:
+                conn.execute(
+                    """
+                    UPDATE multiplica_encontros
+                    SET professor_id = ?, turma_id = ?, data = ?, pauta_numero = ?, hora_inicio = ?,
+                        hora_termino = ?, duracao = ?, participantes = ?, papel_no_encontro = ?,
+                        situacao = ?, texto_automatico = ?, observacao = ?, data_atualizacao = ?
+                    WHERE id = ?
+                    """,
+                    (professor_id, turma_id, *payload, now, encontro_id),
+                )
+            self._replace_evidencias(conn, "multiplica_encontro", encontro_id, data.get("evidencias"))
+        return int(encontro_id)
 
     def authenticate_user(self, username: str, password: str) -> dict | None:
         user = self.get_user_by_username(username)

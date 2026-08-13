@@ -1,7 +1,7 @@
 """Constantes e listas de apoio do sistema pedagógico."""
 
 APP_NAME = "Gestão de Registros Pedagógicos"
-APP_VERSION = "1.030"
+APP_VERSION = "1.053"
 APP_TITLE = f"{APP_NAME} v{APP_VERSION}"
 APP_CREDITS = (
     "Créditos: Professor Júlio César Valera\n"
@@ -26,6 +26,67 @@ PROFESSOR_VINCULOS = [
     "coordenador",
     "professor especializado",
     "outro",
+]
+
+MODO_MULTIPLICA_PADRAO = "nenhum"
+MODOS_MULTIPLICA = [
+    (MODO_MULTIPLICA_PADRAO, "Uso geral"),
+    ("multiplicador", "Professor multiplicador"),
+    ("cursista", "Professor cursista"),
+]
+MODO_MULTIPLICA_LABELS = {valor: rotulo for valor, rotulo in MODOS_MULTIPLICA}
+
+MULTIPLICA_TABS = {
+    "multiplicador": [
+        "Painel",
+        "Turmas",
+        "Encontros",
+        "Cursistas",
+        "Relatórios",
+    ],
+    "cursista": [
+        "Painel",
+        "Formações",
+        "Aplicações em aula",
+        "Reflexões",
+        "Relatórios",
+    ],
+}
+
+MULTIPLICA_DIAS_SEMANA = [
+    "SEG",
+    "TER",
+    "QUA",
+    "QUI",
+    "SEX",
+    "SAB",
+    "DOM",
+]
+
+MULTIPLICA_TURMA_SITUACOES = [
+    "ativa",
+    "inativa",
+]
+
+MULTIPLICA_ENCONTRO_SITUACOES = [
+    "realizado",
+    "sem cursistas",
+    "planejado",
+    "remarcado",
+    "cancelado",
+]
+
+MULTIPLICA_ENCONTRO_PAPEIS = [
+    "multiplicador",
+    "cursista",
+]
+
+MULTIPLICA_TEXTOS_AUTOMATICOS = [
+    "Encontro realizado",
+    "Encontro sem cursistas",
+    "Encontro remarcado",
+    "Encontro cancelado",
+    "Registro livre",
 ]
 
 SITUACOES_ATIVO_INATIVO = ["ativo", "inativo"]

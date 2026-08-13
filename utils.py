@@ -52,6 +52,50 @@ def current_time_hm() -> str:
     return dt.datetime.now().strftime("%H:%M")
 
 
+BRAZIL_FIXED_HOLIDAYS = {
+    (1, 1): "Confraternizacao Universal",
+    (4, 21): "Tiradentes",
+    (5, 1): "Dia do Trabalho",
+    (9, 7): "Independencia do Brasil",
+    (10, 12): "Nossa Senhora Aparecida",
+    (11, 2): "Finados",
+    (11, 15): "Proclamacao da Republica",
+    (11, 20): "Consciencia Negra",
+    (12, 25): "Natal",
+}
+
+
+def easter_sunday(year: int) -> dt.date:
+    """Calcula o domingo de Pascoa no calendario gregoriano."""
+    a = year % 19
+    b = year // 100
+    c = year % 100
+    d = b // 4
+    e = b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i = c // 4
+    k = c % 4
+    l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451
+    month = (h + l - 7 * m + 114) // 31
+    day = ((h + l - 7 * m + 114) % 31) + 1
+    return dt.date(year, month, day)
+
+
+def get_brazil_holidays(year: int) -> dict[dt.date, str]:
+    """Retorna feriados nacionais fixos e moveis mais usuais."""
+    holidays = {
+        dt.date(year, month, day): name
+        for (month, day), name in BRAZIL_FIXED_HOLIDAYS.items()
+    }
+    easter = easter_sunday(year)
+    holidays[easter - dt.timedelta(days=2)] = "Sexta-feira Santa"
+    holidays[easter + dt.timedelta(days=60)] = "Corpus Christi"
+    return holidays
+
+
 def normalize_date(value: str) -> str:
     value = (value or "").strip()
     if not value:
@@ -392,10 +436,12 @@ class EvidenceInput(ttk.LabelFrame):
 
     def _build(self) -> None:
         self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
 
         list_frame = ttk.Frame(self)
         list_frame.grid(row=0, column=0, sticky="nsew")
         list_frame.columnconfigure(0, weight=1)
+        list_frame.rowconfigure(0, weight=1)
 
         self.listbox = tk.Listbox(list_frame, height=self.height, exportselection=False)
         self.listbox.grid(row=0, column=0, sticky="nsew")
@@ -538,11 +584,13 @@ class DateInput(ttk.Frame):
         self._updating = False
         self._placeholder_visible = False
         self._placeholder = "DD/MM/AAAA"
+        self._calendar_highlight_weekdays: set[int] = set()
         self._value = tk.StringVar()
         self.entry = ttk.Entry(self, textvariable=self._value, width=width)
         self.entry.pack(side="left", fill="x", expand=True)
         self.button = ttk.Button(self, text="📅", width=3, command=self.open_calendar)
         self.button.pack(side="left", padx=(4, 0))
+        self.button.configure(text="\U0001F4C5")
         self.entry.bind("<FocusIn>", self._on_focus_in)
         self.entry.bind("<KeyRelease>", self._on_key_release)
         self.entry.bind("<FocusOut>", self._on_focus_out)
@@ -609,8 +657,19 @@ class DateInput(ttk.Frame):
         except ValueError:
             return dt.date.today()
 
+    def set_calendar_weekday_highlights(self, weekdays: list[int] | set[int] | tuple[int, ...] | None) -> None:
+        self._calendar_highlight_weekdays = set()
+        for day in weekdays or []:
+            if isinstance(day, int) and 0 <= day <= 6:
+                self._calendar_highlight_weekdays.add(day)
+
     def open_calendar(self) -> None:
-        CalendarPopup(self, self._initial_date(), self.set_date)
+        CalendarPopup(
+            self,
+            self._initial_date(),
+            self.set_date,
+            highlight_weekdays=self._calendar_highlight_weekdays,
+        )
 
     def set_date(self, value: dt.date) -> None:
         self._placeholder_visible = False
@@ -759,12 +818,24 @@ class CalendarPopup(tk.Toplevel):
     ]
     WEEKDAY_NAMES = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"]
 
-    def __init__(self, parent: tk.Misc, initial_date: dt.date, on_select) -> None:
+    def __init__(
+        self,
+        parent: tk.Misc,
+        initial_date: dt.date,
+        on_select,
+        *,
+        highlight_weekdays: set[int] | list[int] | tuple[int, ...] | None = None,
+    ) -> None:
         super().__init__(parent)
         self.on_select = on_select
         self.year = initial_date.year
         self.month = initial_date.month
         self.today = dt.date.today()
+        self.highlight_weekdays = {
+            day
+            for day in (highlight_weekdays or [])
+            if isinstance(day, int) and 0 <= day <= 6
+        }
 
         self.title("Selecionar data")
         self.transient(parent.winfo_toplevel())
@@ -788,8 +859,7 @@ class CalendarPopup(tk.Toplevel):
 
         weekdays = ttk.Frame(container)
         weekdays.pack(fill="x", pady=(8, 4))
-        for column, name in enumerate(self.WEEKDAY_NAMES):
-            ttk.Label(weekdays, text=name, width=4, anchor="center").grid(row=0, column=column, padx=1, pady=1)
+        self.weekdays_frame = weekdays
 
         self.days_frame = ttk.Frame(container)
         self.days_frame.pack(fill="both", expand=True)
@@ -819,14 +889,39 @@ class CalendarPopup(tk.Toplevel):
     def _render_days(self) -> None:
         for child in self.days_frame.winfo_children():
             child.destroy()
+        for child in self.weekdays_frame.winfo_children():
+            child.destroy()
 
         self.title_label.config(text=f"{self.MONTH_NAMES[self.month - 1]} / {self.year}")
+        for column, name in enumerate(self.WEEKDAY_NAMES):
+            label_kwargs = {
+                "text": name,
+                "width": 4,
+                "anchor": "center",
+                "bg": self.cget("bg"),
+                "fg": "#202020",
+            }
+            if column in self.highlight_weekdays:
+                label_kwargs.update(
+                    {
+                        "bg": "#dbeafe",
+                        "fg": "#1d4ed8",
+                        "font": ("Segoe UI", 9, "bold"),
+                    }
+                )
+            tk.Label(self.weekdays_frame, **label_kwargs).grid(row=0, column=column, padx=1, pady=1)
+
+        holidays = get_brazil_holidays(self.year)
         month_matrix = calendar.Calendar(firstweekday=0).monthdayscalendar(self.year, self.month)
         for row_index, week in enumerate(month_matrix):
             for col_index, day in enumerate(week):
                 if day == 0:
                     ttk.Label(self.days_frame, text=" ", width=4).grid(row=row_index, column=col_index, padx=1, pady=1)
                     continue
+                date_value = dt.date(self.year, self.month, day)
+                is_today = date_value == self.today
+                is_holiday = date_value in holidays
+                is_turma_weekday = date_value.weekday() in self.highlight_weekdays
                 button_kwargs = {
                     "text": f"{day:02d}",
                     "width": 4,
@@ -834,7 +929,29 @@ class CalendarPopup(tk.Toplevel):
                     "relief": tk.RAISED,
                     "bd": 1,
                 }
-                if self.year == self.today.year and self.month == self.today.month and day == self.today.day:
+                if is_turma_weekday:
+                    button_kwargs.update(
+                        {
+                            "bg": "#dbeafe",
+                            "activebackground": "#bfdbfe",
+                            "fg": "#1d4ed8",
+                        }
+                    )
+                if is_holiday:
+                    button_kwargs.update(
+                        {
+                            "fg": "#9f1239",
+                            "activeforeground": "#9f1239",
+                        }
+                    )
+                    if not is_turma_weekday:
+                        button_kwargs.update(
+                            {
+                                "bg": "#fff1f2",
+                                "activebackground": "#ffe4e6",
+                            }
+                        )
+                if is_today:
                     button_kwargs.update(
                         {
                             "bg": "#f6d365",

@@ -15,6 +15,8 @@ from consultas import ConsultasWindow
 from database import DatabaseManager
 from intercorrencias import IntercorrenciasWindow
 from models import APP_CREDITS, APP_NAME, APP_TITLE, APP_VERSION
+from multiplica_config import MultiplicaModeWindow
+from multiplica_window import MultiplicaWindow
 from relatorios import RelatoriosWindow
 from rotinas import RotinasDocentesWindow
 from utils import (
@@ -178,9 +180,13 @@ class MainApplication(tk.Tk):
         ajuda_menu.add_command(label="README / Documentação", command=self.show_readme)
         ajuda_menu.add_separator()
         ajuda_menu.add_command(label="Sobre", command=self.show_about)
+
         seguranca_menu = tk.Menu(menu_bar, tearoff=0)
+        seguranca_menu.add_command(label="Modo do Programa Multiplica", command=self.configure_multiplica_mode)
+        seguranca_menu.add_separator()
         seguranca_menu.add_command(label="Alterar senha", command=self.change_password)
         seguranca_menu.add_command(label="Trocar usuário", command=self.logout)
+
         menu_bar.add_cascade(label="Segurança", menu=seguranca_menu)
         menu_bar.add_cascade(label="Ajuda", menu=ajuda_menu)
         self.config(menu=menu_bar)
@@ -193,11 +199,13 @@ class MainApplication(tk.Tk):
         header = ttk.Frame(root_frame, style="Hero.TFrame", padding=(22, 18))
         header.pack(fill="x", pady=(0, 18))
         header.columnconfigure(0, weight=1)
+
         title_row = ttk.Frame(header, style="HeroInner.TFrame")
         title_row.grid(row=0, column=0, sticky="ew")
         title_row.columnconfigure(0, weight=1)
         ttk.Label(title_row, text=APP_NAME, style="HeroTitle.TLabel").grid(row=0, column=0, sticky="w")
         ttk.Label(title_row, text=f"Versão atual {APP_VERSION}", style="Version.TLabel").grid(row=0, column=1, sticky="e")
+
         ttk.Label(
             header,
             text=(
@@ -208,11 +216,15 @@ class MainApplication(tk.Tk):
             wraplength=920,
             justify="left",
         ).grid(row=1, column=0, sticky="w", pady=(8, 10))
+
         meta_row = ttk.Frame(header, style="HeroInner.TFrame")
         meta_row.grid(row=2, column=0, sticky="ew")
         meta_row.columnconfigure(0, weight=1)
+        meta_row.columnconfigure(1, weight=0)
         self.user_label = ttk.Label(meta_row, text="Usuário não autenticado", style="UserStatus.TLabel")
         self.user_label.grid(row=0, column=0, sticky="w")
+        self.mode_label = ttk.Label(meta_row, text="Modo de uso: Uso geral", style="Version.TLabel")
+        self.mode_label.grid(row=0, column=1, sticky="e", padx=(12, 0))
 
         content = ttk.Frame(root_frame, style="App.TFrame")
         content.pack(fill="both", expand=True)
@@ -249,28 +261,50 @@ class MainApplication(tk.Tk):
         def resize_nav_inner(_event) -> None:
             nav_canvas.itemconfigure(nav_window, width=_event.width)
 
+        def _on_nav_mousewheel(event) -> None:
+            if event.delta:
+                nav_canvas.yview_scroll(int(-event.delta / 120), "units")
+            elif getattr(event, "num", None) == 4:
+                nav_canvas.yview_scroll(-1, "units")
+            elif getattr(event, "num", None) == 5:
+                nav_canvas.yview_scroll(1, "units")
+
+        def _bind_nav_mousewheel(_event=None) -> None:
+            nav_canvas.bind_all("<MouseWheel>", _on_nav_mousewheel)
+            nav_canvas.bind_all("<Button-4>", _on_nav_mousewheel)
+            nav_canvas.bind_all("<Button-5>", _on_nav_mousewheel)
+
+        def _unbind_nav_mousewheel(_event=None) -> None:
+            nav_canvas.unbind_all("<MouseWheel>")
+            nav_canvas.unbind_all("<Button-4>")
+            nav_canvas.unbind_all("<Button-5>")
+
         nav_inner.bind("<Configure>", update_nav_scroll)
         nav_canvas.bind("<Configure>", resize_nav_inner)
+        nav_canvas.bind("<Enter>", _bind_nav_mousewheel)
+        nav_canvas.bind("<Leave>", _unbind_nav_mousewheel)
+        nav_inner.bind("<Enter>", _bind_nav_mousewheel)
+        nav_inner.bind("<Leave>", _unbind_nav_mousewheel)
 
         buttons = [
             ("1. Rotina docente", self.open_rotinas),
-            ("2. Cadastros básicos", self.open_cadastros),
-            ("3. Nova intercorrência", self.open_intercorrencias),
-            ("4. Registrar ausência de professor", self.open_ausencias),
-            ("5. Consultar registros", self.open_consultas),
-            ("6. Relatório do dia", lambda: self.open_relatorios("dia")),
-            ("7. Relatório por período", lambda: self.open_relatorios("periodo")),
-            ("8. Relatório por professor", lambda: self.open_relatorios("professor")),
-            ("9. Relatório por espaço", lambda: self.open_relatorios("espaco")),
-            ("10. Exportar dados", lambda: self.open_relatorios("exportar")),
-            ("11. Backup", self.open_backup),
-            ("12. Sair", self.destroy),
+            ("2. Programa Multiplica", self.open_multiplica),
+            ("3. Cadastros básicos", self.open_cadastros),
+            ("4. Nova intercorrência", self.open_intercorrencias),
+            ("5. Registrar ausência de professor", self.open_ausencias),
+            ("6. Consultar registros", self.open_consultas),
+            ("7. Relatório do dia", lambda: self.open_relatorios("dia")),
+            ("8. Relatório por período", lambda: self.open_relatorios("periodo")),
+            ("9. Relatório por professor", lambda: self.open_relatorios("professor")),
+            ("10. Relatório por espaço", lambda: self.open_relatorios("espaco")),
+            ("11. Exportar dados", lambda: self.open_relatorios("exportar")),
+            ("12. Backup", self.open_backup),
+            ("13. Sair", self.destroy),
             ("Ajuda rápida", self.show_manual),
         ]
         for index, (text, command) in enumerate(buttons):
-            pady = (0, 0)
             button_style = "PrimaryNav.TButton" if index == 0 else "Nav.TButton"
-            ttk.Button(nav_inner, text=text, command=command, style=button_style).pack(fill="x", pady=pady)
+            ttk.Button(nav_inner, text=text, command=command, style=button_style).pack(fill="x", pady=0)
 
         right_panel = ttk.Frame(content, style="App.TFrame")
         right_panel.grid(row=0, column=1, sticky="nsew")
@@ -289,7 +323,7 @@ class MainApplication(tk.Tk):
         summary_frame.columnconfigure(0, weight=1)
         summary_frame.columnconfigure(1, weight=1)
         summary_frame.columnconfigure(2, weight=1)
-        self.summary_labels = {}
+        self.summary_labels: dict[str, ttk.Label] = {}
         summary_items = [
             ("professores_ativos", "Professores ativos"),
             ("espacos_ativos", "Espaços ativos"),
@@ -312,11 +346,7 @@ class MainApplication(tk.Tk):
         help_frame = ttk.Frame(right_panel, style="Surface.TFrame", padding=(20, 18))
         help_frame.grid(row=3, column=0, sticky="nsew", pady=(4, 0))
         help_frame.columnconfigure(0, weight=1)
-        ttk.Button(help_frame, text="Ler orientações de uso", command=self.show_home_guidance).grid(
-            row=0,
-            column=0,
-            sticky="w",
-        )
+        ttk.Button(help_frame, text="Ler orientações de uso", command=self.show_home_guidance).grid(row=0, column=0, sticky="w")
 
     def refresh_dashboard(self) -> None:
         summary = self.db.get_dashboard_summary()
@@ -326,8 +356,10 @@ class MainApplication(tk.Tk):
             nome = self.current_user.get("nome_completo") or self.current_user.get("nome_usuario") or ""
             usuario = self.current_user.get("nome_usuario") or ""
             self.user_label.config(text=f"Acesso autenticado: {nome} ({usuario})")
+            self.mode_label.config(text=f"Modo de uso: {self.db.get_user_multiplica_mode_label(self.current_user)}")
         else:
             self.user_label.config(text="Usuário não autenticado")
+            self.mode_label.config(text="Modo de uso: Uso geral")
 
     def _handle_focus_refresh(self, _event=None) -> None:
         self.refresh_dashboard()
@@ -354,6 +386,17 @@ class MainApplication(tk.Tk):
             return
         ChangePasswordWindow(self, self.db, self.current_user["id"])
 
+    def configure_multiplica_mode(self) -> None:
+        if not self.current_user:
+            show_error("Acesso necessário", "Faça login para ajustar o modo do Programa Multiplica.", self)
+            return
+
+        def handle_save(updated_user: dict) -> None:
+            self.current_user = updated_user
+            self.refresh_dashboard()
+
+        MultiplicaModeWindow(self, self.db, self.current_user["id"], on_save=handle_save)
+
     def logout(self) -> None:
         for child in list(self.winfo_children()):
             if isinstance(child, tk.Toplevel):
@@ -372,6 +415,19 @@ class MainApplication(tk.Tk):
 
     def open_rotinas(self) -> None:
         RotinasDocentesWindow(self, self.db, on_change=self.refresh_dashboard)
+
+    def open_multiplica(self) -> None:
+        if not self.current_user:
+            show_error("Acesso necessário", "Faça login para abrir o Programa Multiplica.", self)
+            return
+        MultiplicaWindow(
+            self,
+            self.db,
+            self.current_user,
+            on_open_rotinas=self.open_rotinas,
+            on_open_relatorios=lambda: self.open_relatorios("periodo"),
+            on_open_config=self.configure_multiplica_mode,
+        )
 
     def open_consultas(self) -> None:
         ConsultasWindow(self, self.db)
