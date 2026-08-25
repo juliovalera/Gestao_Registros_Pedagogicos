@@ -115,6 +115,15 @@ class DatabaseManager:
                     nivel_gravidade TEXT,
                     tags TEXT,
                     observacoes TEXT,
+                    ausencia_integral TEXT NOT NULL DEFAULT 'não',
+                    hora_fim TEXT,
+                    turma_ou_grupo_afetado TEXT,
+                    tipo_ausencia TEXT,
+                    havia_comunicacao_previa TEXT,
+                    houve_substituicao TEXT,
+                    impacto_observado TEXT,
+                    providencia_tomada TEXT,
+                    origem_ausencia_id INTEGER UNIQUE,
                     data_hora_registro TEXT NOT NULL,
                     data_hora_atualizacao TEXT NOT NULL,
                     FOREIGN KEY (tipo_ocorrencia_id) REFERENCES tipos_ocorrencia(id) ON UPDATE CASCADE,
@@ -243,6 +252,15 @@ class DatabaseManager:
             self._ensure_column(conn, "usuarios", "professor_id", "INTEGER")
             self._ensure_column(conn, "intercorrencias", "todos_professores", "TEXT NOT NULL DEFAULT 'não'")
             self._ensure_column(conn, "intercorrencias", "contexto_atuacao", "TEXT")
+            self._ensure_column(conn, "intercorrencias", "ausencia_integral", "TEXT NOT NULL DEFAULT 'não'")
+            self._ensure_column(conn, "intercorrencias", "hora_fim", "TEXT")
+            self._ensure_column(conn, "intercorrencias", "turma_ou_grupo_afetado", "TEXT")
+            self._ensure_column(conn, "intercorrencias", "tipo_ausencia", "TEXT")
+            self._ensure_column(conn, "intercorrencias", "havia_comunicacao_previa", "TEXT")
+            self._ensure_column(conn, "intercorrencias", "houve_substituicao", "TEXT")
+            self._ensure_column(conn, "intercorrencias", "impacto_observado", "TEXT")
+            self._ensure_column(conn, "intercorrencias", "providencia_tomada", "TEXT")
+            self._ensure_column(conn, "intercorrencias", "origem_ausencia_id", "INTEGER")
             self._ensure_column(conn, "ausencias_professores", "contexto_atuacao", "TEXT")
             self._ensure_column(conn, "rotinas_docentes", "contexto_atuacao", "TEXT")
             self._ensure_column(conn, "multiplica_turmas", "situacao", "TEXT NOT NULL DEFAULT 'ativa'")
@@ -256,6 +274,7 @@ class DatabaseManager:
             self._seed_reference_data(conn)
             self._seed_sample_data(conn)
             self._migrate_rotinas_docentes_professores(conn)
+            self._migrate_legacy_ausencias(conn)
 
     def _ensure_column(self, conn: sqlite3.Connection, table_name: str, column_name: str, definition: str) -> None:
         columns = {row["name"] for row in conn.execute(f"PRAGMA table_info({table_name})").fetchall()}
@@ -359,6 +378,64 @@ class DatabaseManager:
             user.get("modo_multiplica") or MODO_MULTIPLICA_PADRAO,
             MODO_MULTIPLICA_LABELS[MODO_MULTIPLICA_PADRAO],
         )
+
+    def _migrate_legacy_ausencias(self, conn: sqlite3.Connection) -> None:
+        """Preserva a tabela antiga, mas torna suas ausências consultáveis como intercorrências."""
+        absence_type = conn.execute(
+            "SELECT id FROM tipos_ocorrencia WHERE nome = ?",
+            ("Ausência de professor",),
+        ).fetchone()
+        if not absence_type:
+            return
+
+        legacy_rows = conn.execute(
+            """
+            SELECT a.*
+            FROM ausencias_professores a
+            LEFT JOIN intercorrencias i ON i.origem_ausencia_id = a.id
+            WHERE i.id IS NULL
+            """
+        ).fetchall()
+        for row in legacy_rows:
+            impact = row["impacto_observado"] or ""
+            notes = row["observacoes"] or ""
+            description = impact or notes or "Registro migrado de ausência de professor."
+            conn.execute(
+                """
+                INSERT INTO intercorrencias (
+                    data, hora, tipo_ocorrencia_id, espaco_id, contexto_atuacao, pessoas_relacionadas,
+                    professor_relacionado_id, todos_professores, descricao_objetiva, providencias_adotadas,
+                    encaminhado_para, nivel_gravidade, tags, observacoes, ausencia_integral, hora_fim,
+                    turma_ou_grupo_afetado, tipo_ausencia, havia_comunicacao_previa, houve_substituicao,
+                    impacto_observado, providencia_tomada, origem_ausencia_id,
+                    data_hora_registro, data_hora_atualizacao
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'não', ?, ?, NULL, 'Alto', NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    row["data"],
+                    row["hora_inicio"] or "",
+                    absence_type["id"],
+                    row["espaco_id"],
+                    row["contexto_atuacao"],
+                    None,
+                    row["professor_id"],
+                    description,
+                    row["providencia_tomada"],
+                    notes,
+                    row["ausencia_integral"] or "não",
+                    row["hora_fim"],
+                    row["turma_ou_grupo_afetado"],
+                    row["tipo_ausencia"],
+                    row["havia_comunicacao_previa"],
+                    row["houve_substituicao"],
+                    row["impacto_observado"],
+                    row["providencia_tomada"],
+                    row["id"],
+                    row["data_hora_registro"],
+                    row["data_hora_atualizacao"],
+                ),
+            )
 
     def list_multiplica_turmas(self, professor_id: int, include_inactive: bool = True) -> list[dict]:
         sql = """
@@ -936,6 +1013,14 @@ class DatabaseManager:
             clean_optional(data.get("nivel_gravidade")),
             clean_optional(data.get("tags")),
             clean_optional(data.get("observacoes")),
+            data.get("ausencia_integral", "não"),
+            clean_optional(data.get("hora_fim")),
+            clean_optional(data.get("turma_ou_grupo_afetado")),
+            clean_optional(data.get("tipo_ausencia")),
+            clean_optional(data.get("havia_comunicacao_previa")),
+            clean_optional(data.get("houve_substituicao")),
+            clean_optional(data.get("impacto_observado")),
+            clean_optional(data.get("providencia_tomada")),
         )
         with self.connect() as conn:
             if intercorrencia_id is None:
@@ -944,10 +1029,11 @@ class DatabaseManager:
                     INSERT INTO intercorrencias (
                         data, hora, tipo_ocorrencia_id, espaco_id, contexto_atuacao, pessoas_relacionadas,
                         professor_relacionado_id, todos_professores, descricao_objetiva, providencias_adotadas,
-                        encaminhado_para, nivel_gravidade, tags, observacoes,
-                        data_hora_registro, data_hora_atualizacao
+                        encaminhado_para, nivel_gravidade, tags, observacoes, ausencia_integral, hora_fim,
+                        turma_ou_grupo_afetado, tipo_ausencia, havia_comunicacao_previa, houve_substituicao,
+                        impacto_observado, providencia_tomada, data_hora_registro, data_hora_atualizacao
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     payload + (now, now),
                 )
@@ -958,7 +1044,9 @@ class DatabaseManager:
                     UPDATE intercorrencias
                     SET data = ?, hora = ?, tipo_ocorrencia_id = ?, espaco_id = ?, contexto_atuacao = ?, pessoas_relacionadas = ?,
                         professor_relacionado_id = ?, todos_professores = ?, descricao_objetiva = ?, providencias_adotadas = ?,
-                        encaminhado_para = ?, nivel_gravidade = ?, tags = ?, observacoes = ?,
+                        encaminhado_para = ?, nivel_gravidade = ?, tags = ?, observacoes = ?, ausencia_integral = ?,
+                        hora_fim = ?, turma_ou_grupo_afetado = ?, tipo_ausencia = ?,
+                        havia_comunicacao_previa = ?, houve_substituicao = ?, impacto_observado = ?, providencia_tomada = ?,
                         data_hora_atualizacao = ?
                     WHERE id = ?
                     """,
@@ -1062,19 +1150,27 @@ class DatabaseManager:
         with self.connect() as conn:
             row = conn.execute(
                 """
-                SELECT a.*, p.nome_completo AS professor_nome, e.nome AS espaco_nome
-                FROM ausencias_professores a
-                INNER JOIN professores p ON p.id = a.professor_id
-                INNER JOIN espacos e ON e.id = a.espaco_id
-                WHERE a.id = ?
+                SELECT
+                    i.id, i.data, i.ausencia_integral, i.hora AS hora_inicio, i.hora_fim,
+                    i.professor_relacionado_id AS professor_id, i.espaco_id, i.contexto_atuacao,
+                    i.turma_ou_grupo_afetado,
+                    COALESCE(i.tipo_ausencia, 'ausência registrada') AS tipo_ausencia,
+                    i.havia_comunicacao_previa,
+                    i.houve_substituicao, i.impacto_observado, i.providencia_tomada, i.observacoes,
+                    COALESCE(p.nome_completo, 'Todos os professores') AS professor_nome,
+                    e.nome AS espaco_nome
+                FROM intercorrencias i
+                INNER JOIN tipos_ocorrencia t ON t.id = i.tipo_ocorrencia_id
+                LEFT JOIN professores p ON p.id = i.professor_relacionado_id
+                INNER JOIN espacos e ON e.id = i.espaco_id
+                WHERE i.id = ? AND t.nome = ?
                 """,
-                (ausencia_id,),
+                (ausencia_id, "Ausência de professor"),
             ).fetchone()
             return dict(row) if row else None
 
     def delete_ausencia(self, ausencia_id: int) -> None:
-        with self.connect() as conn:
-            conn.execute("DELETE FROM ausencias_professores WHERE id = ?", (ausencia_id,))
+        self.delete_intercorrencia(ausencia_id)
 
     def _normalize_professor_ids(self, professor_ids: list[int] | tuple[int, ...] | None, fallback_professor_id: int | None = None) -> list[int]:
         ordered_ids: list[int] = []
@@ -1311,6 +1407,9 @@ class DatabaseManager:
         if filters.get("tipo_ocorrencia_id"):
             clauses.append("base.tipo_ocorrencia_id = ?")
             params.append(filters["tipo_ocorrencia_id"])
+        if filters.get("exclude_absences"):
+            clauses.append("t.nome <> ?")
+            params.append("Ausência de professor")
         if filters.get("keyword"):
             keyword = f"%{filters['keyword']}%"
             clauses.append(
@@ -1372,7 +1471,7 @@ class DatabaseManager:
         self._append_period_filters(filters, clauses, params)
 
         if filters.get("professor_id"):
-            clauses.append("base.professor_id = ?")
+            clauses.append("base.professor_relacionado_id = ?")
             params.append(filters["professor_id"])
         if filters.get("espaco_id"):
             clauses.append("base.espaco_id = ?")
@@ -1399,16 +1498,26 @@ class DatabaseManager:
 
         sql = """
             SELECT
-                base.*,
-                p.nome_completo AS professor_nome,
+                base.id, base.data, base.ausencia_integral, base.hora AS hora_inicio, base.hora_fim,
+                base.professor_relacionado_id AS professor_id, base.espaco_id, base.contexto_atuacao,
+                base.turma_ou_grupo_afetado,
+                COALESCE(base.tipo_ausencia, 'ausência registrada') AS tipo_ausencia,
+                base.havia_comunicacao_previa,
+                base.houve_substituicao,
+                COALESCE(base.impacto_observado, base.descricao_objetiva) AS impacto_observado,
+                COALESCE(base.providencia_tomada, base.providencias_adotadas) AS providencia_tomada,
+                base.observacoes,
+                COALESCE(p.nome_completo, 'Todos os professores') AS professor_nome,
                 e.nome AS espaco_nome
-            FROM ausencias_professores base
-            INNER JOIN professores p ON p.id = base.professor_id
+            FROM intercorrencias base
+            INNER JOIN tipos_ocorrencia t ON t.id = base.tipo_ocorrencia_id
+            LEFT JOIN professores p ON p.id = base.professor_relacionado_id
             INNER JOIN espacos e ON e.id = base.espaco_id
         """
+        clauses.insert(0, "t.nome = 'Ausência de professor'")
         if clauses:
             sql += " WHERE " + " AND ".join(clauses)
-        sql += " ORDER BY base.data, COALESCE(base.hora_inicio, ''), base.id"
+        sql += " ORDER BY base.data, COALESCE(base.hora, ''), base.id"
 
         with self.connect() as conn:
             return self._rows_to_dicts(conn.execute(sql, params).fetchall())
@@ -1430,7 +1539,13 @@ class DatabaseManager:
                 params,
             ).fetchone()["total"]
             total_ausencias = conn.execute(
-                f"SELECT COUNT(*) AS total FROM ausencias_professores{where_clause}",
+                f"""
+                SELECT COUNT(*) AS total
+                FROM intercorrencias i
+                INNER JOIN tipos_ocorrencia t ON t.id = i.tipo_ocorrencia_id
+                {where_clause.replace('data', 'i.data')}
+                {' AND ' if where_clause else ' WHERE '}t.nome = 'Ausência de professor'
+                """,
                 params,
             ).fetchone()["total"]
             total_rotinas = conn.execute(
@@ -1468,9 +1583,11 @@ class DatabaseManager:
                 conn.execute(
                     f"""
                     SELECT p.nome_completo AS nome, COUNT(*) AS quantidade
-                    FROM ausencias_professores a
-                    INNER JOIN professores p ON p.id = a.professor_id
+                    FROM intercorrencias a
+                    INNER JOIN tipos_ocorrencia t ON t.id = a.tipo_ocorrencia_id
+                    INNER JOIN professores p ON p.id = a.professor_relacionado_id
                     {where_clause.replace('data', 'a.data')}
+                    {' AND ' if where_clause else ' WHERE '}t.nome = 'Ausência de professor'
                     GROUP BY p.nome_completo
                     ORDER BY quantidade DESC, p.nome_completo
                     """,
@@ -1510,10 +1627,6 @@ class DatabaseManager:
                         FROM intercorrencias i
                         {where_clause.replace('data', 'i.data')}
                         UNION ALL
-                        SELECT a.contexto_atuacao AS contexto_atuacao
-                        FROM ausencias_professores a
-                        {where_clause.replace('data', 'a.data')}
-                        UNION ALL
                         SELECT r.contexto_atuacao AS contexto_atuacao
                         FROM rotinas_docentes r
                         {where_clause.replace('data', 'r.data')}
@@ -1522,7 +1635,7 @@ class DatabaseManager:
                     GROUP BY contexto_atuacao
                     ORDER BY quantidade DESC, nome
                     """,
-                    params + params + params,
+                    params + params,
                 ).fetchall()
             )
 
@@ -1566,8 +1679,10 @@ class DatabaseManager:
                 conn.execute(
                     f"""
                     SELECT data, COUNT(*) AS quantidade
-                    FROM ausencias_professores
-                    {where_clause}
+                    FROM intercorrencias i
+                    INNER JOIN tipos_ocorrencia t ON t.id = i.tipo_ocorrencia_id
+                    {where_clause.replace('data', 'i.data')}
+                    {' AND ' if where_clause else ' WHERE '}t.nome = 'Ausência de professor'
                     GROUP BY data
                     ORDER BY data
                     """,
@@ -1642,7 +1757,12 @@ class DatabaseManager:
                     (today,),
                 ).fetchone()["total"],
                 "ausencias_hoje": conn.execute(
-                    "SELECT COUNT(*) AS total FROM ausencias_professores WHERE data = ?",
+                    """
+                    SELECT COUNT(*) AS total
+                    FROM intercorrencias i
+                    INNER JOIN tipos_ocorrencia t ON t.id = i.tipo_ocorrencia_id
+                    WHERE i.data = ? AND t.nome = 'Ausência de professor'
+                    """,
                     (today,),
                 ).fetchone()["total"],
                 "rotinas_hoje": conn.execute(

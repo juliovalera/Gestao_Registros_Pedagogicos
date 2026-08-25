@@ -8,7 +8,6 @@ import tkinter as tk
 from tkinter import ttk
 
 from auth import ChangePasswordWindow, LoginWindow
-from ausencias import AusenciasWindow
 from backup import BackupWindow
 from cadastros import CadastrosWindow
 from consultas import ConsultasWindow
@@ -291,15 +290,14 @@ class MainApplication(tk.Tk):
             ("2. Programa Multiplica", self.open_multiplica),
             ("3. Cadastros básicos", self.open_cadastros),
             ("4. Nova intercorrência", self.open_intercorrencias),
-            ("5. Registrar ausência de professor", self.open_ausencias),
-            ("6. Consultar registros", self.open_consultas),
-            ("7. Relatório do dia", lambda: self.open_relatorios("dia")),
-            ("8. Relatório por período", lambda: self.open_relatorios("periodo")),
-            ("9. Relatório por professor", lambda: self.open_relatorios("professor")),
-            ("10. Relatório por espaço", lambda: self.open_relatorios("espaco")),
-            ("11. Exportar dados", lambda: self.open_relatorios("exportar")),
-            ("12. Backup", self.open_backup),
-            ("13. Sair", self.destroy),
+            ("5. Consultar registros", self.open_consultas),
+            ("6. Relatório do dia", lambda: self.open_relatorios("dia")),
+            ("7. Relatório por período", lambda: self.open_relatorios("periodo")),
+            ("8. Relatório por professor", lambda: self.open_relatorios("professor")),
+            ("9. Relatório por espaço", lambda: self.open_relatorios("espaco")),
+            ("10. Exportar dados", lambda: self.open_relatorios("exportar")),
+            ("11. Backup", self.open_backup),
+            ("12. Sair", self.destroy),
             ("Ajuda rápida", self.show_manual),
         ]
         for index, (text, command) in enumerate(buttons):
@@ -410,9 +408,6 @@ class MainApplication(tk.Tk):
     def open_intercorrencias(self) -> None:
         IntercorrenciasWindow(self, self.db, on_change=self.refresh_dashboard)
 
-    def open_ausencias(self) -> None:
-        AusenciasWindow(self, self.db, on_change=self.refresh_dashboard)
-
     def open_rotinas(self) -> None:
         RotinasDocentesWindow(self, self.db, on_change=self.refresh_dashboard)
 
@@ -499,7 +494,7 @@ class MainApplication(tk.Tk):
             "Prefira iniciais, turma ou identificação genérica quando necessário.\n\n"
             "Fluxo sugerido:\n"
             "1. Revise os cadastros básicos.\n"
-            "2. Registre intercorrências, ausências e rotinas docentes.\n"
+            "2. Registre intercorrências (incluindo ausências) e rotinas docentes.\n"
             "3. Consulte e filtre os históricos.\n"
             "4. Gere relatórios para acompanhamento e coordenação.\n"
             "5. Faça backups regularmente.",

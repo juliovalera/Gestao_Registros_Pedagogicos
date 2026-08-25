@@ -458,7 +458,7 @@ class RelatoriosWindow(tk.Toplevel):
         filters.pop("start_date", None)
         filters.pop("end_date", None)
         filters["specific_date"] = report_date
-        inter = self.db.search_intercorrencias(filters)
+        inter = self.db.search_intercorrencias({**filters, "exclude_absences": True})
         aus = self.db.search_ausencias(filters)
         rotinas = self.db.search_rotinas_docentes(filters)
 
@@ -516,7 +516,7 @@ class RelatoriosWindow(tk.Toplevel):
         else:
             filters.pop("end_date", None)
 
-        inter = self.db.search_intercorrencias(filters)
+        inter = self.db.search_intercorrencias({**filters, "exclude_absences": True})
         aus = self.db.search_ausencias(filters)
         rotinas = self.db.search_rotinas_docentes(filters)
 
@@ -584,7 +584,7 @@ class RelatoriosWindow(tk.Toplevel):
         if self.context_combo.get():
             filters["contexto_atuacao"] = self.context_combo.get()
 
-        inter = self.db.search_intercorrencias(filters)
+        inter = self.db.search_intercorrencias({**filters, "exclude_absences": True})
         aus = self.db.search_ausencias(filters)
         rotinas = self.db.search_rotinas_docentes(filters)
 
@@ -643,7 +643,7 @@ class RelatoriosWindow(tk.Toplevel):
         if self.context_combo.get():
             filters["contexto_atuacao"] = self.context_combo.get()
 
-        inter = self.db.search_intercorrencias(filters)
+        inter = self.db.search_intercorrencias({**filters, "exclude_absences": True})
         aus = self.db.search_ausencias(filters)
         rotinas = self.db.search_rotinas_docentes(filters)
 
@@ -853,7 +853,7 @@ class RelatoriosWindow(tk.Toplevel):
         else:
             filters, specific_date, has_period = self._collect_report_filters()
 
-        inter = self.db.search_intercorrencias(filters)
+        inter = self.db.search_intercorrencias({**filters, "exclude_absences": True})
         aus = self.db.search_ausencias(filters)
         rotinas = self.db.search_rotinas_docentes(filters)
 

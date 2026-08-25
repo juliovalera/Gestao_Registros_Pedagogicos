@@ -5,7 +5,14 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from models import CONTEXTOS_ATUACAO, ESPACO_TODOS, NIVEIS_GRAVIDADE, PROFESSOR_TODOS
+from models import (
+    CONTEXTOS_ATUACAO,
+    ESPACO_TODOS,
+    NIVEIS_GRAVIDADE,
+    OPCOES_TRIPLAS,
+    PROFESSOR_TODOS,
+    TIPOS_AUSENCIA,
+)
 from utils import (
     DateInput,
     EvidenceInput,
@@ -345,7 +352,7 @@ class IntercorrenciaForm(tk.Toplevel):
         ttk.Label(frame, text="Tipo de ocorrência *").grid(row=3, column=0, sticky="w", pady=4)
         self.type_combo = ttk.Combobox(frame, state="readonly", width=58)
         self.type_combo.grid(row=3, column=1, sticky="ew", pady=4)
-        self.type_combo.bind("<<ComboboxSelected>>", self._apply_default_gravity)
+        self.type_combo.bind("<<ComboboxSelected>>", self._on_type_selected)
 
         ttk.Label(frame, text="Espaço *").grid(row=4, column=0, sticky="w", pady=4)
         self.space_combo = ttk.Combobox(frame, state="readonly", width=58)
@@ -378,8 +385,44 @@ class IntercorrenciaForm(tk.Toplevel):
         self.evidence_input = EvidenceInput(frame, height=4)
         self.evidence_input.grid(row=13, column=0, columnspan=2, sticky="ew", pady=(8, 0))
 
+        self.absence_frame = ttk.LabelFrame(frame, text="Detalhes da ausência de professor", padding=8)
+        self.absence_frame.columnconfigure(1, weight=1)
+        self.absence_frame.grid(row=14, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+
+        self.ausencia_integral_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            self.absence_frame,
+            text="Ausência integral",
+            variable=self.ausencia_integral_var,
+            command=self._toggle_integral_absence,
+        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 4))
+
+        ttk.Label(self.absence_frame, text="Hora final").grid(row=1, column=0, sticky="w", pady=3)
+        self.hora_fim_entry = TimeInput(self.absence_frame, width=18)
+        self.hora_fim_entry.grid(row=1, column=1, sticky="w", pady=3)
+
+        ttk.Label(self.absence_frame, text="Turma ou grupo afetado").grid(row=2, column=0, sticky="w", pady=3)
+        self.turma_entry = ttk.Entry(self.absence_frame)
+        self.turma_entry.grid(row=2, column=1, sticky="ew", pady=3)
+
+        ttk.Label(self.absence_frame, text="Tipo de ausência *").grid(row=3, column=0, sticky="w", pady=3)
+        self.tipo_ausencia_combo = ttk.Combobox(self.absence_frame, values=TIPOS_AUSENCIA, state="readonly")
+        self.tipo_ausencia_combo.grid(row=3, column=1, sticky="ew", pady=3)
+
+        ttk.Label(self.absence_frame, text="Havia comunicação prévia").grid(row=4, column=0, sticky="w", pady=3)
+        self.comunicacao_combo = ttk.Combobox(self.absence_frame, values=OPCOES_TRIPLAS, state="readonly")
+        self.comunicacao_combo.grid(row=4, column=1, sticky="ew", pady=3)
+
+        ttk.Label(self.absence_frame, text="Houve substituição").grid(row=5, column=0, sticky="w", pady=3)
+        self.substituicao_combo = ttk.Combobox(self.absence_frame, values=OPCOES_TRIPLAS, state="readonly")
+        self.substituicao_combo.grid(row=5, column=1, sticky="ew", pady=3)
+
+        self.impacto_text = self._add_text_field(self.absence_frame, 6, "Impacto observado *", 3)
+        self.providencia_text = self._add_text_field(self.absence_frame, 7, "Providência tomada", 3)
+        self.absence_frame.grid_remove()
+
         button_frame = ttk.Frame(frame)
-        button_frame.grid(row=14, column=0, columnspan=2, sticky="e", pady=(12, 0))
+        button_frame.grid(row=15, column=0, columnspan=2, sticky="e", pady=(12, 0))
         ttk.Button(button_frame, text="Salvar", command=self.save).pack(side="left", padx=4)
         ttk.Button(button_frame, text="Cancelar", command=self.destroy).pack(side="left", padx=4)
 
@@ -422,6 +465,27 @@ class IntercorrenciaForm(tk.Toplevel):
         if selected and not self.gravidade_combo.get():
             self.gravidade_combo.set(self.type_defaults.get(selected, ""))
 
+    def _is_absence(self) -> bool:
+        return self.type_combo.get() == "Ausência de professor"
+
+    def _on_type_selected(self, _event=None) -> None:
+        self._apply_default_gravity()
+        if self._is_absence():
+            self.absence_frame.grid()
+            self._toggle_integral_absence()
+        else:
+            self.absence_frame.grid_remove()
+            self.hora_entry.entry.configure(state="normal")
+
+    def _toggle_integral_absence(self) -> None:
+        integral = self.ausencia_integral_var.get()
+        state = "disabled" if integral else "normal"
+        self.hora_entry.entry.configure(state=state)
+        self.hora_fim_entry.entry.configure(state=state)
+        if integral:
+            self.hora_entry.set("")
+            self.hora_fim_entry.set("")
+
     def _apply_suggested_context(self) -> None:
         latest_record = self.db.get_latest_intercorrencia()
         if latest_record and latest_record.get("contexto_atuacao"):
@@ -434,6 +498,7 @@ class IntercorrenciaForm(tk.Toplevel):
         self.data_entry.insert(0, format_date_display(record["data"]))
         self.hora_entry.insert(0, record["hora"])
         self.type_combo.set(record["tipo_nome"])
+        self._on_type_selected()
         self.space_combo.set(record["espaco_nome"])
         if record.get("todos_professores") == "sim":
             self.professor_combo.set(PROFESSOR_TODOS)
@@ -448,13 +513,27 @@ class IntercorrenciaForm(tk.Toplevel):
         self.encaminhado_entry.insert(0, record.get("encaminhado_para") or "")
         self.observacoes_text.insert("1.0", record.get("observacoes") or "")
         self.evidence_input.set_items(record.get("evidencias"))
+        if self._is_absence():
+            self.ausencia_integral_var.set(record.get("ausencia_integral") == "sim")
+            self.hora_fim_entry.insert(0, record.get("hora_fim") or "")
+            self.turma_entry.insert(0, record.get("turma_ou_grupo_afetado") or "")
+            self.tipo_ausencia_combo.set(record.get("tipo_ausencia") or "")
+            self.comunicacao_combo.set(record.get("havia_comunicacao_previa") or "")
+            self.substituicao_combo.set(record.get("houve_substituicao") or "")
+            self.impacto_text.insert("1.0", record.get("impacto_observado") or "")
+            self.providencia_text.insert("1.0", record.get("providencia_tomada") or "")
+            self._toggle_integral_absence()
 
     def save(self) -> None:
         try:
             selected_professor = self.professor_combo.get()
+            is_absence = self._is_absence()
+            absence_integral = "sim" if is_absence and self.ausencia_integral_var.get() else "não"
+            hora = "" if absence_integral == "sim" else normalize_time(self.hora_entry.get())
+            hora_fim = "" if absence_integral == "sim" else normalize_time(self.hora_fim_entry.get())
             data = {
                 "data": normalize_date(self.data_entry.get()),
-                "hora": normalize_time(self.hora_entry.get()),
+                "hora": hora,
                 "tipo_ocorrencia_id": self.type_map.get(self.type_combo.get()),
                 "espaco_id": self.space_map.get(self.space_combo.get()),
                 "professor_relacionado_id": None if selected_professor == PROFESSOR_TODOS else self.professor_map.get(selected_professor),
@@ -468,6 +547,14 @@ class IntercorrenciaForm(tk.Toplevel):
                 "tags": self.tags_entry.get().strip(),
                 "observacoes": get_text(self.observacoes_text),
                 "evidencias": self.evidence_input.get_items(),
+                "ausencia_integral": absence_integral,
+                "hora_fim": hora_fim if is_absence else "",
+                "turma_ou_grupo_afetado": self.turma_entry.get().strip() if is_absence else "",
+                "tipo_ausencia": self.tipo_ausencia_combo.get().strip() if is_absence else "",
+                "havia_comunicacao_previa": self.comunicacao_combo.get().strip() if is_absence else "",
+                "houve_substituicao": self.substituicao_combo.get().strip() if is_absence else "",
+                "impacto_observado": get_text(self.impacto_text) if is_absence else "",
+                "providencia_tomada": get_text(self.providencia_text) if is_absence else "",
             }
         except ValueError as exc:
             show_error("Validação", str(exc), self)
@@ -475,7 +562,7 @@ class IntercorrenciaForm(tk.Toplevel):
 
         if (
             not data["data"]
-            or not data["hora"]
+            or (not is_absence and not data["hora"])
             or not data["contexto_atuacao"]
             or not data["tipo_ocorrencia_id"]
             or not data["espaco_id"]
@@ -483,10 +570,21 @@ class IntercorrenciaForm(tk.Toplevel):
         ):
             show_error(
                 "Campos obrigatórios",
-                "Preencha data, hora, contexto de atuação, tipo de ocorrência, espaço e descrição objetiva.",
+                "Preencha data, hora (exceto ausência integral), contexto de atuação, tipo de ocorrência, espaço e descrição objetiva.",
                 self,
             )
             return
+
+        if is_absence:
+            if selected_professor in ("", PROFESSOR_TODOS):
+                show_error("Professor obrigatório", "Selecione o professor relacionado à ausência.", self)
+                return
+            if not data["tipo_ausencia"]:
+                show_error("Tipo de ausência obrigatório", "Informe o tipo de ausência.", self)
+                return
+            if not data["impacto_observado"] and not data["observacoes"]:
+                show_error("Registro incompleto", "Informe o impacto observado ou as observações da ausência.", self)
+                return
 
         self.db.save_intercorrencia(data, self.record_id)
         if self.on_save:
