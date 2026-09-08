@@ -199,14 +199,14 @@ class MultiplicaWindow(tk.Toplevel):
         self.dia_combo = ttk.Combobox(form, textvariable=self.dia_var, state="readonly", width=10, values=MULTIPLICA_DIAS_SEMANA)
         self.dia_combo.grid(row=0, column=3, sticky="w", pady=4)
 
-        ttk.Label(form, text="Horario").grid(row=0, column=4, sticky="w", padx=(18, 8), pady=4)
+        ttk.Label(form, text="Hor\u00e1rio").grid(row=0, column=4, sticky="w", padx=(18, 8), pady=4)
         self.horario_entry = TimeInput(form, width=12)
         self.horario_entry.grid(row=0, column=5, sticky="w", pady=4)
 
         ttk.Label(form, text="Tema / componente").grid(row=1, column=0, sticky="w", padx=(0, 8), pady=4)
         ttk.Entry(form, textvariable=self.componente_var, width=36).grid(row=1, column=1, columnspan=3, sticky="ew", pady=4)
 
-        ttk.Label(form, text="Situacao").grid(row=1, column=4, sticky="w", padx=(18, 8), pady=4)
+        ttk.Label(form, text="Situa\u00e7\u00e3o").grid(row=1, column=4, sticky="w", padx=(18, 8), pady=4)
         self.situacao_combo = ttk.Combobox(
             form,
             textvariable=self.situacao_var,
@@ -221,7 +221,7 @@ class MultiplicaWindow(tk.Toplevel):
         ttk.Button(actions, text="Salvar turma", command=self._save_turma).pack(side="left", padx=(0, 8))
         ttk.Button(actions, text="Nova turma", command=self._clear_turma_form).pack(side="left", padx=(0, 8))
         ttk.Button(actions, text="Carregar selecionada", command=self._load_selected_turma).pack(side="left", padx=(0, 8))
-        ttk.Button(actions, text="Alterar situacao", command=self._toggle_selected_turma_status).pack(side="left")
+        ttk.Button(actions, text="Alterar situa\u00e7\u00e3o", command=self._toggle_selected_turma_status).pack(side="left")
 
         list_frame = ttk.LabelFrame(frame, text="Turmas cadastradas", padding=8)
         list_frame.grid(row=1, column=0, sticky="nsew", pady=(12, 0))
@@ -231,11 +231,11 @@ class MultiplicaWindow(tk.Toplevel):
         columns = ("codigo", "dia", "horario", "componente", "situacao")
         self.turmas_tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=12)
         headings = {
-            "codigo": "Codigo",
+            "codigo": "C\u00f3digo",
             "dia": "Dia",
-            "horario": "Horario",
+            "horario": "Hor\u00e1rio",
             "componente": "Componente",
-            "situacao": "Situacao",
+            "situacao": "Situa\u00e7\u00e3o",
         }
         widths = {
             "codigo": 140,
@@ -320,12 +320,12 @@ class MultiplicaWindow(tk.Toplevel):
         ttk.Label(form, text="Nº/pauta").grid(row=1, column=2, sticky="w", pady=4, padx=(12, 8))
         ttk.Entry(form, textvariable=self.encontro_pauta_var, width=10).grid(row=1, column=3, sticky="w", pady=4)
 
-        ttk.Label(form, text="Inicio").grid(row=2, column=0, sticky="w", pady=4, padx=(0, 8))
+        ttk.Label(form, text="In\u00edcio").grid(row=2, column=0, sticky="w", pady=4, padx=(0, 8))
         self.encontro_inicio_entry = TimeInput(form, width=10)
         self.encontro_inicio_entry.grid(row=2, column=1, sticky="w", pady=4)
         self.encontro_inicio_entry.bind("<FocusOut>", lambda _event: self._update_encontro_duration_from_times(), add="+")
 
-        ttk.Label(form, text="Termino").grid(row=2, column=2, sticky="w", pady=4, padx=(18, 8))
+        ttk.Label(form, text="T\u00e9rmino").grid(row=2, column=2, sticky="w", pady=4, padx=(18, 8))
         self.encontro_termino_entry = TimeInput(form, width=10)
         self.encontro_termino_entry.grid(row=2, column=3, sticky="w", pady=4)
         self.encontro_termino_entry.bind("<FocusOut>", lambda _event: self._update_encontro_duration_from_times(), add="+")
@@ -333,7 +333,7 @@ class MultiplicaWindow(tk.Toplevel):
         ttk.Label(form, text="Participantes").grid(row=3, column=0, sticky="w", pady=4, padx=(0, 8))
         ttk.Entry(form, textvariable=self.encontro_participantes_var, width=10).grid(row=3, column=1, sticky="w", pady=4)
 
-        ttk.Label(form, text="Duracao").grid(row=3, column=2, sticky="w", pady=4, padx=(18, 8))
+        ttk.Label(form, text="Dura\u00e7\u00e3o").grid(row=3, column=2, sticky="w", pady=4, padx=(18, 8))
         ttk.Entry(form, textvariable=self.encontro_duracao_var, width=10).grid(row=3, column=3, sticky="w", pady=4)
 
         ttk.Label(form, text="Papel no encontro").grid(row=4, column=0, sticky="w", pady=4, padx=(0, 8))
@@ -346,7 +346,7 @@ class MultiplicaWindow(tk.Toplevel):
         )
         self.encontro_papel_combo.grid(row=4, column=1, sticky="w", pady=4)
 
-        ttk.Label(form, text="Situacao").grid(row=4, column=2, sticky="w", pady=4, padx=(18, 8))
+        ttk.Label(form, text="Situa\u00e7\u00e3o").grid(row=4, column=2, sticky="w", pady=4, padx=(18, 8))
         self.encontro_situacao_combo = ttk.Combobox(
             form,
             textvariable=self.encontro_situacao_var,
@@ -356,7 +356,7 @@ class MultiplicaWindow(tk.Toplevel):
         )
         self.encontro_situacao_combo.grid(row=4, column=3, sticky="w", pady=4)
 
-        ttk.Label(form, text="Texto automatico").grid(row=5, column=0, sticky="w", pady=4, padx=(0, 8))
+        ttk.Label(form, text="Texto autom\u00e1tico").grid(row=5, column=0, sticky="w", pady=4, padx=(0, 8))
         self.encontro_texto_combo = ttk.Combobox(
             form,
             textvariable=self.encontro_texto_auto_var,
@@ -372,7 +372,7 @@ class MultiplicaWindow(tk.Toplevel):
         encounter_actions.grid(row=6, column=0, columnspan=4, sticky="w", pady=(10, 0))
         ttk.Button(encounter_actions, text="Salvar encontro", command=self._save_encontro).pack(side="left", padx=(0, 8))
         ttk.Button(encounter_actions, text="Inserir encontro", command=self._clear_encontro_form).pack(side="left", padx=(0, 8))
-        ttk.Button(encounter_actions, text="Atualizar mes", command=self._refresh_encontros).pack(side="left", padx=(0, 8))
+        ttk.Button(encounter_actions, text="Atualizar m\u00eas", command=self._refresh_encontros).pack(side="left", padx=(0, 8))
         ttk.Button(encounter_actions, text="Carregar selecionado", command=self._load_selected_encontro).pack(side="left")
 
         lower_left = ttk.Frame(left)
@@ -381,7 +381,7 @@ class MultiplicaWindow(tk.Toplevel):
         lower_left.rowconfigure(0, weight=1, minsize=145)
         lower_left.rowconfigure(1, weight=1, minsize=145)
 
-        observacao_frame = ttk.LabelFrame(lower_left, text="Observacao", padding=6)
+        observacao_frame = ttk.LabelFrame(lower_left, text="Observa\u00e7\u00e3o", padding=6)
         observacao_frame.grid(row=0, column=0, sticky="nsew")
         observacao_frame.columnconfigure(0, weight=1)
         observacao_frame.rowconfigure(0, weight=1)
@@ -394,7 +394,7 @@ class MultiplicaWindow(tk.Toplevel):
 
         self.encontro_evidencias = EvidenceInput(
             lower_left,
-            title="Evidencias do encontro",
+            title="Evid\u00eancias do encontro",
             height=4,
         )
         self.encontro_evidencias.grid(row=1, column=0, sticky="nsew", pady=(12, 0))
@@ -405,7 +405,7 @@ class MultiplicaWindow(tk.Toplevel):
         right.rowconfigure(0, weight=1)
         right.rowconfigure(1, weight=1)
 
-        month_frame = ttk.LabelFrame(right, text="Encontros do mes", padding=8)
+        month_frame = ttk.LabelFrame(right, text="Encontros do m\u00eas", padding=8)
         month_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 8))
         month_frame.columnconfigure(0, weight=1)
         month_frame.rowconfigure(0, weight=1)
@@ -417,22 +417,28 @@ class MultiplicaWindow(tk.Toplevel):
             "pauta": "Pauta",
             "turma": "Turma",
             "papel": "Papel",
-            "situacao": "Situacao",
+            "situacao": "Situa\u00e7\u00e3o",
             "participantes": "Participantes",
             "imagens": "Imagens",
         }
-        widths = {
-            "data": 90,
-            "pauta": 65,
-            "turma": 85,
-            "papel": 95,
-            "situacao": 120,
-            "participantes": 95,
-            "imagens": 80,
+        compact_widths = {
+            "data": 50,
+            "pauta": 50,
+            "turma": 55,
+            "papel": 75,
+            "situacao": 70,
+            "participantes": 90,
+            "imagens": 60,
         }
         for key in columns:
             self.encontros_tree.heading(key, text=headings[key])
-            self.encontros_tree.column(key, width=widths[key], anchor="w")
+            self.encontros_tree.column(
+                key,
+                width=compact_widths[key],
+                minwidth=compact_widths[key],
+                stretch=False,
+                anchor="w",
+            )
         self.encontros_tree.grid(row=0, column=0, sticky="nsew")
         self.encontros_tree.bind("<<TreeviewSelect>>", lambda _event: self._update_encontro_preview())
         self.encontros_tree.bind("<Double-1>", lambda _event: self._load_selected_encontro())
@@ -441,7 +447,7 @@ class MultiplicaWindow(tk.Toplevel):
         month_scroll.grid(row=0, column=1, sticky="ns")
         self.encontros_tree.configure(yscrollcommand=month_scroll.set)
 
-        preview_frame = ttk.LabelFrame(right, text="Pre-visualizacao do encontro", padding=8)
+        preview_frame = ttk.LabelFrame(right, text="Pr\u00e9-visualiza\u00e7\u00e3o do encontro", padding=8)
         preview_frame.grid(row=1, column=0, sticky="nsew")
         preview_frame.columnconfigure(0, weight=1)
         preview_frame.rowconfigure(0, weight=1)
@@ -771,17 +777,17 @@ class MultiplicaWindow(tk.Toplevel):
 
     def _build_relatorios_tab(self, frame: ttk.Frame) -> None:
         frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
         frame.rowconfigure(2, weight=1)
-        frame.rowconfigure(3, weight=1)
 
-        filters = ttk.LabelFrame(frame, text="Filtros do relatorio", padding=10)
-        filters.grid(row=0, column=0, sticky="ew")
+        filters = ttk.LabelFrame(frame, text="Filtros do relat\u00f3rio", padding=10)
+        filters.grid(row=0, column=0, columnspan=2, sticky="ew")
         filters.columnconfigure(5, weight=1)
         ttk.Label(filters, text="De").grid(row=0, column=0, sticky="w", padx=(0, 6), pady=4)
         self.relatorio_data_inicial = DateInput(filters, width=12)
         self.relatorio_data_inicial.grid(row=0, column=1, sticky="w", pady=4)
         self.relatorio_data_inicial.set(dt.date.today().replace(month=1, day=1).strftime("%d/%m/%Y"))
-        ttk.Label(filters, text="Ate").grid(row=0, column=2, sticky="w", padx=(14, 6), pady=4)
+        ttk.Label(filters, text="At\u00e9").grid(row=0, column=2, sticky="w", padx=(14, 6), pady=4)
         self.relatorio_data_final = DateInput(filters, width=12)
         self.relatorio_data_final.grid(row=0, column=3, sticky="w", pady=4)
         self.relatorio_data_final.set(dt.date.today().strftime("%d/%m/%Y"))
@@ -790,25 +796,25 @@ class MultiplicaWindow(tk.Toplevel):
         self.relatorio_turma_combo.grid(row=0, column=5, sticky="ew", pady=4)
         ttk.Label(filters, text="Papel").grid(row=1, column=0, sticky="w", padx=(0, 6), pady=4)
         ttk.Combobox(filters, textvariable=self.relatorio_papel_var, state="readonly", width=14, values=("Todos", *MULTIPLICA_ENCONTRO_PAPEIS)).grid(row=1, column=1, sticky="w", pady=4)
-        ttk.Label(filters, text="Situacao").grid(row=1, column=2, sticky="w", padx=(14, 6), pady=4)
+        ttk.Label(filters, text="Situa\u00e7\u00e3o").grid(row=1, column=2, sticky="w", padx=(14, 6), pady=4)
         ttk.Combobox(filters, textvariable=self.relatorio_situacao_var, state="readonly", width=16, values=("Todas", *MULTIPLICA_ENCONTRO_SITUACOES)).grid(row=1, column=3, sticky="w", pady=4)
         actions = ttk.Frame(filters)
         actions.grid(row=1, column=5, sticky="e", pady=4)
-        ttk.Button(actions, text="Gerar relatorio", command=self._generate_multiplica_report).pack(side="left", padx=(0, 8))
+        ttk.Button(actions, text="Gerar relat\u00f3rio", command=self._generate_multiplica_report).pack(side="left", padx=(0, 8))
         ttk.Button(actions, text="Exportar TXT", command=self._export_multiplica_txt).pack(side="left", padx=(0, 8))
         ttk.Button(actions, text="Exportar CSV", command=self._export_multiplica_csv).pack(side="left")
 
         self.relatorio_resumo_var = tk.StringVar(value="Defina os filtros e gere o relatorio.")
-        ttk.Label(frame, textvariable=self.relatorio_resumo_var, justify="left").grid(row=1, column=0, sticky="w", pady=(10, 6))
+        ttk.Label(frame, textvariable=self.relatorio_resumo_var, justify="left").grid(row=1, column=0, columnspan=2, sticky="w", pady=(10, 6))
 
         list_frame = ttk.LabelFrame(frame, text="Encontros encontrados", padding=8)
-        list_frame.grid(row=2, column=0, sticky="nsew")
+        list_frame.grid(row=2, column=0, sticky="nsew", padx=(0, 8))
         list_frame.columnconfigure(0, weight=1)
         list_frame.rowconfigure(0, weight=1)
         columns = ("data", "turma", "pauta", "papel", "situacao", "participantes", "evidencias")
         self.relatorio_tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=7)
-        headings = {"data": "Data", "turma": "Turma", "pauta": "Pauta", "papel": "Papel", "situacao": "Situacao", "participantes": "Participantes", "evidencias": "Evidencias"}
-        widths = {"data": 95, "turma": 120, "pauta": 70, "papel": 110, "situacao": 120, "participantes": 105, "evidencias": 90}
+        headings = {"data": "Data", "turma": "Turma", "pauta": "Pauta", "papel": "Papel", "situacao": "Situa\u00e7\u00e3o", "participantes": "Participantes", "evidencias": "Evid\u00eancias"}
+        widths = {"data": 80, "turma": 75, "pauta": 60, "papel": 100, "situacao": 100, "participantes": 90, "evidencias": 75}
         for key in columns:
             self.relatorio_tree.heading(key, text=headings[key])
             self.relatorio_tree.column(key, width=widths[key], anchor="w")
@@ -817,9 +823,12 @@ class MultiplicaWindow(tk.Toplevel):
         report_scroll = ttk.Scrollbar(list_frame, orient="vertical", command=self.relatorio_tree.yview)
         report_scroll.grid(row=0, column=1, sticky="ns")
         self.relatorio_tree.configure(yscrollcommand=report_scroll.set)
+        report_xscroll = ttk.Scrollbar(list_frame, orient="horizontal", command=self.relatorio_tree.xview)
+        report_xscroll.grid(row=1, column=0, sticky="ew")
+        self.relatorio_tree.configure(xscrollcommand=report_xscroll.set)
 
-        preview_frame = ttk.LabelFrame(frame, text="Pre-visualizacao do relatorio", padding=8)
-        preview_frame.grid(row=3, column=0, sticky="nsew", pady=(12, 0))
+        preview_frame = ttk.LabelFrame(frame, text="Pr\u00e9-visualiza\u00e7\u00e3o do relat\u00f3rio", padding=8)
+        preview_frame.grid(row=2, column=1, sticky="nsew", padx=(8, 0))
         preview_frame.columnconfigure(0, weight=1)
         preview_frame.rowconfigure(0, weight=1)
         self.relatorio_preview = tk.Text(preview_frame, wrap="word", height=12)
@@ -827,7 +836,7 @@ class MultiplicaWindow(tk.Toplevel):
         preview_scroll = ttk.Scrollbar(preview_frame, orient="vertical", command=self.relatorio_preview.yview)
         preview_scroll.grid(row=0, column=1, sticky="ns")
         self.relatorio_preview.configure(yscrollcommand=preview_scroll.set)
-        set_text(self.relatorio_preview, "O relatorio consolidado aparecera aqui.")
+        set_text(self.relatorio_preview, "O relat\u00f3rio consolidado aparecer\u00e1 aqui.")
         self._refresh_turma_options()
 
     def _report_filters(self) -> dict | None:
@@ -835,10 +844,10 @@ class MultiplicaWindow(tk.Toplevel):
             data_inicial = normalize_date(self.relatorio_data_inicial.get())
             data_final = normalize_date(self.relatorio_data_final.get())
         except ValueError as exc:
-            show_error("Periodo invalido", str(exc), self)
+            show_error("Per\u00edodo inv\u00e1lido", str(exc), self)
             return None
         if data_inicial > data_final:
-            show_error("Periodo invalido", "A data inicial nao pode ser posterior a data final.", self)
+            show_error("Per\u00edodo inv\u00e1lido", "A data inicial n\u00e3o pode ser posterior a data final.", self)
             return None
         turma_label = self.relatorio_turma_var.get().strip()
         return {
@@ -851,7 +860,7 @@ class MultiplicaWindow(tk.Toplevel):
 
     def _generate_multiplica_report(self) -> None:
         if not self.linked_professor:
-            show_error("Professor vinculado obrigatorio", "Vincule um professor antes de gerar relatorios.", self)
+            show_error("Professor vinculado obrigat\u00f3rio", "Vincule um professor antes de gerar relat\u00f3rios.", self)
             return
         filters = self._report_filters()
         if filters is None:
@@ -878,23 +887,23 @@ class MultiplicaWindow(tk.Toplevel):
         evidencias = sum(int(item.get("imagens") or 0) for item in self.current_report_rows)
         self.relatorio_resumo_var.set(
             f"{total} encontro(s), {realizados} realizado(s), {formacoes_recebidas} como cursista, "
-            f"{len(cursistas)} cursista(s) ativo(s), {participantes} participacao(oes) e {evidencias} evidencia(s)."
+            f"{len(cursistas)} cursista(s) ativo(s), {participantes} participa\u00e7\u00e3o(\u00f5es) e {evidencias} evid\u00eancia(s)."
         )
         turma_texto = self.relatorio_turma_var.get() or "Todas as turmas"
         linhas = [
-            "RELATORIO - PROGRAMA MULTIPLICA",
+            "RELAT\u00d3RIO - PROGRAMA MULTIPLICA",
             f"Professor vinculado: {self.linked_professor.get('nome_completo') or '-'}",
-            f"Periodo: {format_date_display(filters['data_inicial'])} a {format_date_display(filters['data_final'])}",
+            f"Per\u00edodo: {format_date_display(filters['data_inicial'])} a {format_date_display(filters['data_final'])}",
             f"Turma: {turma_texto}",
-            f"Papel: {self.relatorio_papel_var.get()} | Situacao: {self.relatorio_situacao_var.get()}",
+            f"Papel: {self.relatorio_papel_var.get()} | Situa\u00e7\u00e3o: {self.relatorio_situacao_var.get()}",
             "",
             "RESUMO",
             f"- Encontros: {total}",
             f"- Encontros realizados: {realizados}",
-            f"- Formacoes recebidas como cursista: {formacoes_recebidas}",
+            f"- Forma\u00e7\u00f5es recebidas como cursista: {formacoes_recebidas}",
             f"- Cursistas ativos acompanhados: {len(cursistas)}",
-            f"- Participacoes registradas: {participantes}",
-            f"- Evidencias anexadas: {evidencias}",
+            f"- Participa\u00e7\u00f5es registradas: {participantes}",
+            f"- Evid\u00eancias anexadas: {evidencias}",
             "",
             "ENCONTROS",
         ]
@@ -907,10 +916,10 @@ class MultiplicaWindow(tk.Toplevel):
                         f"{encontro.get('situacao') or '-'}"
                     ),
                     f"  Horario: {encontro.get('hora_inicio') or '-'} - {encontro.get('hora_termino') or '-'} | Duracao: {encontro.get('duracao') or '-'}",
-                    f"  Participantes: {encontro.get('participantes') or 0} | Evidencias: {encontro.get('imagens') or 0}",
+                    f"  Participantes: {encontro.get('participantes') or 0} | Evid\u00eancias: {encontro.get('imagens') or 0}",
                 ])
                 if encontro.get("observacao"):
-                    linhas.append(f"  Observacao: {encontro['observacao']}")
+                    linhas.append(f"  Observa\u00e7\u00e3o: {encontro['observacao']}")
         else:
             linhas.append("Nenhum encontro encontrado para os filtros informados.")
         linhas.extend(["", "CURSISTAS ATIVOS"])
@@ -937,36 +946,36 @@ class MultiplicaWindow(tk.Toplevel):
                 f"Turma: {encontro.get('codigo_turma') or '-'} - {encontro.get('turma_componente') or '-'}\n"
                 f"Pauta: {encontro.get('pauta_numero') or '-'}\n"
                 f"Papel: {encontro.get('papel_no_encontro') or '-'}\n"
-                f"Situacao: {encontro.get('situacao') or '-'}\n"
+                f"Situa\u00e7\u00e3o: {encontro.get('situacao') or '-'}\n"
                 f"Horario: {encontro.get('hora_inicio') or '-'} - {encontro.get('hora_termino') or '-'}\n"
-                f"Duracao: {encontro.get('duracao') or '-'}\n"
+                f"Dura\u00e7\u00e3o: {encontro.get('duracao') or '-'}\n"
                 f"Participantes: {encontro.get('participantes') or 0}\n\n"
-                f"Observacao:\n{encontro.get('observacao') or '-'}"
+                f"Observa\u00e7\u00e3o:\n{encontro.get('observacao') or '-'}"
             ),
         )
 
     def _export_multiplica_txt(self) -> None:
         if not self.current_report_text:
-            show_error("Sem relatorio", "Gere o relatorio antes de exportar.", self)
+            show_error("Sem relat\u00f3rio", "Gere o relat\u00f3rio antes de exportar.", self)
             return
         EXPORT_DIR.mkdir(parents=True, exist_ok=True)
         target = filedialog.asksaveasfilename(
-            parent=self, title="Exportar relatorio em TXT", defaultextension=".txt",
+            parent=self, title="Exportar relat\u00f3rio em TXT", defaultextension=".txt",
             initialdir=str(EXPORT_DIR), initialfile=f"relatorio_multiplica_{current_timestamp().replace(':', '-').replace(' ', '_')}.txt",
             filetypes=[("Texto", "*.txt"), ("Todos os arquivos", "*.*")],
         )
         if not target:
             return
         Path(target).write_text(self.current_report_text, encoding="utf-8")
-        show_info("Exportacao concluida", f"Relatorio salvo em:\n{target}", self)
+        show_info("Exporta\u00e7\u00e3o conclu\u00edda", f"Relat\u00f3rio salvo em:\n{target}", self)
 
     def _export_multiplica_csv(self) -> None:
         if not self.current_report_rows:
-            show_error("Sem dados", "Gere um relatorio com encontros antes de exportar.", self)
+            show_error("Sem dados", "Gere um relat\u00f3rio com encontros antes de exportar.", self)
             return
         EXPORT_DIR.mkdir(parents=True, exist_ok=True)
         target = filedialog.asksaveasfilename(
-            parent=self, title="Exportar relatorio em CSV", defaultextension=".csv",
+            parent=self, title="Exportar relat\u00f3rio em CSV", defaultextension=".csv",
             initialdir=str(EXPORT_DIR), initialfile=f"relatorio_multiplica_{current_timestamp().replace(':', '-').replace(' ', '_')}.csv",
             filetypes=[("CSV", "*.csv"), ("Todos os arquivos", "*.*")],
         )
@@ -977,7 +986,7 @@ class MultiplicaWindow(tk.Toplevel):
             writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore")
             writer.writeheader()
             writer.writerows(self.current_report_rows)
-        show_info("Exportacao concluida", f"Relatorio salvo em:\n{target}", self)
+        show_info("Exporta\u00e7\u00e3o conclu\u00edda", f"Relat\u00f3rio salvo em:\n{target}", self)
 
     def _weekday_index_from_sigla(self, sigla: str) -> int | None:
         mapping = {
