@@ -228,6 +228,23 @@ class DatabaseManager:
                     FOREIGN KEY (turma_id) REFERENCES multiplica_turmas(id) ON UPDATE CASCADE
                 );
 
+                CREATE TABLE IF NOT EXISTS multiplica_cursistas (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    professor_id INTEGER NOT NULL,
+                    turma_id INTEGER NOT NULL,
+                    nome_completo TEXT NOT NULL,
+                    unidade_escolar TEXT,
+                    email TEXT,
+                    telefone TEXT,
+                    situacao TEXT NOT NULL DEFAULT 'ativo',
+                    observacoes TEXT,
+                    data_cadastro TEXT NOT NULL,
+                    data_atualizacao TEXT NOT NULL,
+                    FOREIGN KEY (professor_id) REFERENCES professores(id) ON UPDATE CASCADE,
+                    FOREIGN KEY (turma_id) REFERENCES multiplica_turmas(id) ON UPDATE CASCADE,
+                    UNIQUE (professor_id, turma_id, nome_completo)
+                );
+
                 CREATE INDEX IF NOT EXISTS idx_intercorrencias_data ON intercorrencias(data);
                 CREATE INDEX IF NOT EXISTS idx_intercorrencias_tipo ON intercorrencias(tipo_ocorrencia_id);
                 CREATE INDEX IF NOT EXISTS idx_intercorrencias_professor ON intercorrencias(professor_relacionado_id);
@@ -245,6 +262,8 @@ class DatabaseManager:
                 CREATE INDEX IF NOT EXISTS idx_multiplica_encontros_professor ON multiplica_encontros(professor_id);
                 CREATE INDEX IF NOT EXISTS idx_multiplica_encontros_turma ON multiplica_encontros(turma_id);
                 CREATE INDEX IF NOT EXISTS idx_multiplica_encontros_data ON multiplica_encontros(data);
+                CREATE INDEX IF NOT EXISTS idx_multiplica_cursistas_professor ON multiplica_cursistas(professor_id);
+                CREATE INDEX IF NOT EXISTS idx_multiplica_cursistas_turma ON multiplica_cursistas(turma_id);
                 """
             )
             self._ensure_column(conn, "ausencias_professores", "ausencia_integral", "TEXT NOT NULL DEFAULT 'não'")
@@ -548,6 +567,141 @@ class DatabaseManager:
                 (professor_id, inicio, fim),
             ).fetchall()
             return self._rows_to_dicts(rows)
+
+    def list_multiplica_cursistas(
+        self,
+        professor_id: int,
+        turma_id: int | None = None,
+        include_inactive: bool = True,
+    ) -> list[dict]:
+        sql = """
+            SELECT c.*, t.codigo_turma, t.componente AS turma_componente
+            FROM multiplica_cursistas c
+            INNER JOIN multiplica_turmas t ON t.id = c.turma_id
+            WHERE c.professor_id = ?
+        """
+        params: list = [professor_id]
+        if turma_id:
+            sql += " AND c.turma_id = ?"
+            params.append(turma_id)
+        if not include_inactive:
+            sql += " AND c.situacao = 'ativo'"
+        sql += " ORDER BY c.situacao = 'ativo' DESC, c.nome_completo COLLATE NOCASE, c.id DESC"
+        with self.connect() as conn:
+            return self._rows_to_dicts(conn.execute(sql, params).fetchall())
+
+    def get_multiplica_cursista(self, cursista_id: int) -> dict | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT c.*, t.codigo_turma, t.componente AS turma_componente
+                FROM multiplica_cursistas c
+                INNER JOIN multiplica_turmas t ON t.id = c.turma_id
+                WHERE c.id = ?
+                """,
+                (cursista_id,),
+            ).fetchone()
+            return dict(row) if row else None
+
+    def save_multiplica_cursista(self, data: dict, cursista_id: int | None = None) -> int:
+        professor_id = int(data["professor_id"])
+        turma_id = int(data["turma_id"])
+        nome_completo = str(data.get("nome_completo") or "").strip()
+        situacao = str(data.get("situacao") or "ativo").strip().lower()
+
+        if not self.get_professor(professor_id):
+            raise ValueError("Professor vinculado não encontrado.")
+        turma = self.get_multiplica_turma(turma_id)
+        if not turma or int(turma["professor_id"]) != professor_id:
+            raise ValueError("A turma selecionada não pertence ao professor vinculado.")
+        if not nome_completo:
+            raise ValueError("Informe o nome completo do cursista.")
+        if situacao not in {"ativo", "inativo"}:
+            raise ValueError("Situação do cursista inválida.")
+
+        values = (
+            professor_id,
+            turma_id,
+            nome_completo,
+            clean_optional(data.get("unidade_escolar")),
+            clean_optional(data.get("email")),
+            clean_optional(data.get("telefone")),
+            situacao,
+            clean_optional(data.get("observacoes")),
+        )
+        now = current_timestamp()
+        with self.connect() as conn:
+            try:
+                if cursista_id is None:
+                    cursor = conn.execute(
+                        """
+                        INSERT INTO multiplica_cursistas (
+                            professor_id, turma_id, nome_completo, unidade_escolar, email, telefone,
+                            situacao, observacoes, data_cadastro, data_atualizacao
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (*values, now, now),
+                    )
+                    return int(cursor.lastrowid)
+                conn.execute(
+                    """
+                    UPDATE multiplica_cursistas
+                    SET professor_id = ?, turma_id = ?, nome_completo = ?, unidade_escolar = ?,
+                        email = ?, telefone = ?, situacao = ?, observacoes = ?, data_atualizacao = ?
+                    WHERE id = ?
+                    """,
+                    (*values, now, cursista_id),
+                )
+                return int(cursista_id)
+            except sqlite3.IntegrityError as exc:
+                raise ValueError("Este cursista já está cadastrado nesta turma.") from exc
+
+    def update_multiplica_cursista_status(self, cursista_id: int, situacao: str) -> None:
+        situacao = (situacao or "").strip().lower()
+        if situacao not in {"ativo", "inativo"}:
+            raise ValueError("Situação do cursista inválida.")
+        with self.connect() as conn:
+            conn.execute(
+                "UPDATE multiplica_cursistas SET situacao = ?, data_atualizacao = ? WHERE id = ?",
+                (situacao, current_timestamp(), cursista_id),
+            )
+
+    def list_multiplica_encontros(self, professor_id: int, filters: dict | None = None) -> list[dict]:
+        filters = filters or {}
+        clauses = ["e.professor_id = ?"]
+        params: list = [professor_id]
+        if filters.get("data_inicial"):
+            clauses.append("e.data >= ?")
+            params.append(filters["data_inicial"])
+        if filters.get("data_final"):
+            clauses.append("e.data <= ?")
+            params.append(filters["data_final"])
+        if filters.get("turma_id"):
+            clauses.append("e.turma_id = ?")
+            params.append(int(filters["turma_id"]))
+        if filters.get("papel"):
+            clauses.append("e.papel_no_encontro = ?")
+            params.append(filters["papel"])
+        if filters.get("situacao"):
+            clauses.append("e.situacao = ?")
+            params.append(filters["situacao"])
+
+        sql = """
+            SELECT
+                e.*, t.codigo_turma, t.componente AS turma_componente,
+                (
+                    SELECT COUNT(*)
+                    FROM evidencias_registros ev
+                    WHERE ev.tipo_registro = 'multiplica_encontro' AND ev.registro_id = e.id
+                ) AS imagens
+            FROM multiplica_encontros e
+            INNER JOIN multiplica_turmas t ON t.id = e.turma_id
+            WHERE """ + " AND ".join(clauses) + """
+            ORDER BY e.data DESC, COALESCE(e.hora_inicio, '') DESC, e.id DESC
+        """
+        with self.connect() as conn:
+            return self._rows_to_dicts(conn.execute(sql, params).fetchall())
 
     def get_multiplica_encontro(self, encontro_id: int) -> dict | None:
         with self.connect() as conn:

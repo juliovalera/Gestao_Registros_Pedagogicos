@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import csv
 import datetime as dt
+from pathlib import Path
 import tkinter as tk
-from tkinter import ttk
+from tkinter import filedialog, ttk
 
 from models import (
     MODO_MULTIPLICA_LABELS,
@@ -19,8 +21,10 @@ from models import (
 from utils import (
     DateInput,
     EvidenceInput,
+    EXPORT_DIR,
     TimeInput,
     center_window,
+    current_timestamp,
     format_date_display,
     normalize_date,
     normalize_time,
@@ -56,6 +60,7 @@ class MultiplicaWindow(tk.Toplevel):
 
         self.current_turma_id: int | None = None
         self.current_encontro_id: int | None = None
+        self.current_cursista_id: int | None = None
 
         self.codigo_var = tk.StringVar()
         self.dia_var = tk.StringVar()
@@ -69,6 +74,19 @@ class MultiplicaWindow(tk.Toplevel):
         self.encontro_situacao_var = tk.StringVar(value="realizado")
         self.encontro_texto_auto_var = tk.StringVar(value=MULTIPLICA_TEXTOS_AUTOMATICOS[0])
         self.encontro_duracao_var = tk.StringVar()
+
+        self.cursista_turma_var = tk.StringVar()
+        self.cursista_nome_var = tk.StringVar()
+        self.cursista_unidade_var = tk.StringVar()
+        self.cursista_email_var = tk.StringVar()
+        self.cursista_telefone_var = tk.StringVar()
+        self.cursista_situacao_var = tk.StringVar(value="ativo")
+
+        self.relatorio_turma_var = tk.StringVar(value="Todas as turmas")
+        self.relatorio_papel_var = tk.StringVar(value="Todos")
+        self.relatorio_situacao_var = tk.StringVar(value="Todas")
+        self.current_report_rows: list[dict] = []
+        self.current_report_text = ""
 
         self.turma_map: dict[str, int] = {}
         self.turma_details_map: dict[str, dict] = {}
@@ -130,6 +148,10 @@ class MultiplicaWindow(tk.Toplevel):
                 self._build_turmas_tab(frame)
             elif self.mode_value == "multiplicador" and tab_name == "Encontros":
                 self._build_encontros_tab(frame)
+            elif self.mode_value == "multiplicador" and tab_name == "Cursistas":
+                self._build_cursistas_tab(frame)
+            elif tab_name.lower().startswith("relat"):
+                self._build_relatorios_tab(frame)
             else:
                 self._build_placeholder_tab(frame, tab_name)
 
@@ -350,6 +372,7 @@ class MultiplicaWindow(tk.Toplevel):
         encounter_actions.grid(row=6, column=0, columnspan=4, sticky="w", pady=(10, 0))
         ttk.Button(encounter_actions, text="Salvar encontro", command=self._save_encontro).pack(side="left", padx=(0, 8))
         ttk.Button(encounter_actions, text="Inserir encontro", command=self._clear_encontro_form).pack(side="left", padx=(0, 8))
+        ttk.Button(encounter_actions, text="Atualizar mes", command=self._refresh_encontros).pack(side="left", padx=(0, 8))
         ttk.Button(encounter_actions, text="Carregar selecionado", command=self._load_selected_encontro).pack(side="left")
 
         lower_left = ttk.Frame(left)
@@ -521,6 +544,440 @@ class MultiplicaWindow(tk.Toplevel):
         if hasattr(self, "encontro_turma_combo"):
             self.encontro_turma_combo["values"] = values
             self._sync_encontro_calendar_highlights(apply_defaults=False)
+        if hasattr(self, "cursista_turma_combo"):
+            self.cursista_turma_combo["values"] = values
+        if hasattr(self, "relatorio_turma_combo"):
+            self.relatorio_turma_combo["values"] = ["Todas as turmas", *values]
+
+    def _build_cursistas_tab(self, frame: ttk.Frame) -> None:
+        frame.columnconfigure(0, weight=3)
+        frame.columnconfigure(1, weight=2)
+        frame.rowconfigure(1, weight=1)
+
+        form = ttk.LabelFrame(frame, text="Cadastro de cursista", padding=12)
+        form.grid(row=0, column=0, columnspan=2, sticky="ew")
+        form.columnconfigure(1, weight=1)
+        form.columnconfigure(3, weight=1)
+
+        ttk.Label(form, text="Turma").grid(row=0, column=0, sticky="w", padx=(0, 8), pady=4)
+        self.cursista_turma_combo = ttk.Combobox(
+            form,
+            textvariable=self.cursista_turma_var,
+            state="readonly",
+            width=30,
+        )
+        self.cursista_turma_combo.grid(row=0, column=1, sticky="ew", pady=4)
+
+        ttk.Label(form, text="Nome completo").grid(row=0, column=2, sticky="w", padx=(18, 8), pady=4)
+        ttk.Entry(form, textvariable=self.cursista_nome_var, width=38).grid(row=0, column=3, sticky="ew", pady=4)
+
+        ttk.Label(form, text="Unidade escolar").grid(row=1, column=0, sticky="w", padx=(0, 8), pady=4)
+        ttk.Entry(form, textvariable=self.cursista_unidade_var, width=30).grid(row=1, column=1, sticky="ew", pady=4)
+
+        ttk.Label(form, text="E-mail").grid(row=1, column=2, sticky="w", padx=(18, 8), pady=4)
+        ttk.Entry(form, textvariable=self.cursista_email_var, width=38).grid(row=1, column=3, sticky="ew", pady=4)
+
+        ttk.Label(form, text="Telefone").grid(row=2, column=0, sticky="w", padx=(0, 8), pady=4)
+        ttk.Entry(form, textvariable=self.cursista_telefone_var, width=18).grid(row=2, column=1, sticky="w", pady=4)
+
+        ttk.Label(form, text="Situacao").grid(row=2, column=2, sticky="w", padx=(18, 8), pady=4)
+        ttk.Combobox(
+            form,
+            textvariable=self.cursista_situacao_var,
+            values=("ativo", "inativo"),
+            state="readonly",
+            width=14,
+        ).grid(row=2, column=3, sticky="w", pady=4)
+
+        ttk.Label(form, text="Observacoes").grid(row=3, column=0, sticky="nw", padx=(0, 8), pady=4)
+        self.cursista_observacoes = tk.Text(form, height=3, wrap="word")
+        self.cursista_observacoes.grid(row=3, column=1, columnspan=3, sticky="ew", pady=4)
+
+        actions = ttk.Frame(form)
+        actions.grid(row=4, column=0, columnspan=4, sticky="w", pady=(10, 0))
+        ttk.Button(actions, text="Salvar cursista", command=self._save_cursista).pack(side="left", padx=(0, 8))
+        ttk.Button(actions, text="Novo cursista", command=self._clear_cursista_form).pack(side="left", padx=(0, 8))
+        ttk.Button(actions, text="Carregar selecionado", command=self._load_selected_cursista).pack(side="left", padx=(0, 8))
+        ttk.Button(actions, text="Alterar situacao", command=self._toggle_selected_cursista_status).pack(side="left")
+
+        list_frame = ttk.LabelFrame(frame, text="Cursistas cadastrados", padding=8)
+        list_frame.grid(row=1, column=0, sticky="nsew", pady=(12, 0), padx=(0, 8))
+        list_frame.columnconfigure(0, weight=1)
+        list_frame.rowconfigure(0, weight=1)
+        columns = ("nome", "turma", "unidade", "situacao")
+        self.cursistas_tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=14)
+        headings = {"nome": "Nome", "turma": "Turma", "unidade": "Unidade escolar", "situacao": "Situacao"}
+        widths = {"nome": 240, "turma": 100, "unidade": 200, "situacao": 90}
+        for key in columns:
+            self.cursistas_tree.heading(key, text=headings[key])
+            self.cursistas_tree.column(key, width=widths[key], anchor="w")
+        self.cursistas_tree.grid(row=0, column=0, sticky="nsew")
+        self.cursistas_tree.bind("<<TreeviewSelect>>", lambda _event: self._update_cursista_preview())
+        self.cursistas_tree.bind("<Double-1>", lambda _event: self._load_selected_cursista())
+        scrollbar = ttk.Scrollbar(list_frame, orient="vertical", command=self.cursistas_tree.yview)
+        scrollbar.grid(row=0, column=1, sticky="ns")
+        self.cursistas_tree.configure(yscrollcommand=scrollbar.set)
+
+        preview_frame = ttk.LabelFrame(frame, text="Detalhes do cursista", padding=8)
+        preview_frame.grid(row=1, column=1, sticky="nsew", pady=(12, 0), padx=(8, 0))
+        preview_frame.columnconfigure(0, weight=1)
+        preview_frame.rowconfigure(0, weight=1)
+        self.cursista_preview = tk.Text(preview_frame, wrap="word", height=14)
+        self.cursista_preview.grid(row=0, column=0, sticky="nsew")
+        preview_scroll = ttk.Scrollbar(preview_frame, orient="vertical", command=self.cursista_preview.yview)
+        preview_scroll.grid(row=0, column=1, sticky="ns")
+        self.cursista_preview.configure(yscrollcommand=preview_scroll.set)
+
+        self._clear_cursista_form()
+        self._refresh_turma_options()
+        self._refresh_cursistas()
+
+    def _selected_cursista_id(self) -> int | None:
+        if not hasattr(self, "cursistas_tree"):
+            return None
+        selected = self.cursistas_tree.selection()
+        return int(selected[0]) if selected else None
+
+    def _clear_cursista_form(self) -> None:
+        self.current_cursista_id = None
+        self.cursista_turma_var.set("")
+        self.cursista_nome_var.set("")
+        self.cursista_unidade_var.set("")
+        self.cursista_email_var.set("")
+        self.cursista_telefone_var.set("")
+        self.cursista_situacao_var.set("ativo")
+        if hasattr(self, "cursista_observacoes"):
+            self.cursista_observacoes.delete("1.0", tk.END)
+
+    def _refresh_cursistas(self) -> None:
+        if not hasattr(self, "cursistas_tree"):
+            return
+        for item_id in self.cursistas_tree.get_children():
+            self.cursistas_tree.delete(item_id)
+        if not self.linked_professor:
+            return
+        for cursista in self.db.list_multiplica_cursistas(int(self.linked_professor["id"])):
+            self.cursistas_tree.insert(
+                "",
+                tk.END,
+                iid=str(cursista["id"]),
+                values=(
+                    cursista.get("nome_completo") or "",
+                    cursista.get("codigo_turma") or "",
+                    cursista.get("unidade_escolar") or "",
+                    cursista.get("situacao") or "",
+                ),
+            )
+        self._update_cursista_preview()
+
+    def _save_cursista(self) -> None:
+        if not self.linked_professor:
+            show_error("Professor vinculado obrigatorio", "Vincule um professor antes de cadastrar cursistas.", self)
+            return
+        turma_id = self.turma_map.get(self.cursista_turma_var.get().strip())
+        if not turma_id:
+            show_error("Turma obrigatoria", "Selecione a turma do cursista.", self)
+            return
+        payload = {
+            "professor_id": int(self.linked_professor["id"]),
+            "turma_id": turma_id,
+            "nome_completo": self.cursista_nome_var.get().strip(),
+            "unidade_escolar": self.cursista_unidade_var.get().strip(),
+            "email": self.cursista_email_var.get().strip(),
+            "telefone": self.cursista_telefone_var.get().strip(),
+            "situacao": self.cursista_situacao_var.get().strip(),
+            "observacoes": self.cursista_observacoes.get("1.0", tk.END).strip(),
+        }
+        try:
+            cursista_id = self.db.save_multiplica_cursista(payload, self.current_cursista_id)
+        except ValueError as exc:
+            show_error("Nao foi possivel salvar", str(exc), self)
+            return
+        self.current_cursista_id = cursista_id
+        self._refresh_cursistas()
+        self.cursistas_tree.selection_set(str(cursista_id))
+        self.cursistas_tree.focus(str(cursista_id))
+        self.cursistas_tree.see(str(cursista_id))
+        self._update_cursista_preview()
+        show_info("Cursista salvo", "Os dados do cursista foram salvos com sucesso.", self)
+
+    def _load_selected_cursista(self) -> None:
+        cursista_id = self._selected_cursista_id()
+        if not cursista_id:
+            show_error("Selecao necessaria", "Selecione um cursista na lista para carregar.", self)
+            return
+        cursista = self.db.get_multiplica_cursista(cursista_id)
+        if not cursista:
+            show_error("Cursista nao encontrado", "Nao foi possivel carregar o cursista selecionado.", self)
+            return
+        self.current_cursista_id = cursista_id
+        self.cursista_nome_var.set(cursista.get("nome_completo") or "")
+        self.cursista_unidade_var.set(cursista.get("unidade_escolar") or "")
+        self.cursista_email_var.set(cursista.get("email") or "")
+        self.cursista_telefone_var.set(cursista.get("telefone") or "")
+        self.cursista_situacao_var.set(cursista.get("situacao") or "ativo")
+        self.cursista_observacoes.delete("1.0", tk.END)
+        self.cursista_observacoes.insert("1.0", cursista.get("observacoes") or "")
+        for label, turma_id in self.turma_map.items():
+            if turma_id == int(cursista["turma_id"]):
+                self.cursista_turma_var.set(label)
+                break
+        self._update_cursista_preview()
+
+    def _toggle_selected_cursista_status(self) -> None:
+        cursista_id = self._selected_cursista_id()
+        if not cursista_id:
+            show_error("Selecao necessaria", "Selecione um cursista para alterar a situacao.", self)
+            return
+        cursista = self.db.get_multiplica_cursista(cursista_id)
+        if not cursista:
+            show_error("Cursista nao encontrado", "Nao foi possivel localizar o cursista selecionado.", self)
+            return
+        nova_situacao = "inativo" if cursista.get("situacao") == "ativo" else "ativo"
+        try:
+            self.db.update_multiplica_cursista_status(cursista_id, nova_situacao)
+        except ValueError as exc:
+            show_error("Nao foi possivel alterar", str(exc), self)
+            return
+        self._refresh_cursistas()
+        self.cursistas_tree.selection_set(str(cursista_id))
+        self.cursistas_tree.focus(str(cursista_id))
+        self._load_selected_cursista()
+        show_info("Situacao atualizada", f"O cursista agora esta {nova_situacao}.", self)
+
+    def _update_cursista_preview(self) -> None:
+        if not hasattr(self, "cursista_preview"):
+            return
+        cursista_id = self._selected_cursista_id()
+        if not cursista_id:
+            set_text(self.cursista_preview, "Selecione um cursista para visualizar os detalhes.")
+            return
+        cursista = self.db.get_multiplica_cursista(cursista_id)
+        if not cursista:
+            set_text(self.cursista_preview, "Nao foi possivel carregar os detalhes do cursista.")
+            return
+        set_text(
+            self.cursista_preview,
+            (
+                f"Nome: {cursista.get('nome_completo') or '-'}\n"
+                f"Turma: {cursista.get('codigo_turma') or '-'} - {cursista.get('turma_componente') or '-'}\n"
+                f"Situacao: {cursista.get('situacao') or '-'}\n"
+                f"Unidade escolar: {cursista.get('unidade_escolar') or '-'}\n"
+                f"E-mail: {cursista.get('email') or '-'}\n"
+                f"Telefone: {cursista.get('telefone') or '-'}\n\n"
+                f"Observacoes:\n{cursista.get('observacoes') or '-'}"
+            ),
+        )
+
+    def _build_relatorios_tab(self, frame: ttk.Frame) -> None:
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(2, weight=1)
+        frame.rowconfigure(3, weight=1)
+
+        filters = ttk.LabelFrame(frame, text="Filtros do relatorio", padding=10)
+        filters.grid(row=0, column=0, sticky="ew")
+        filters.columnconfigure(5, weight=1)
+        ttk.Label(filters, text="De").grid(row=0, column=0, sticky="w", padx=(0, 6), pady=4)
+        self.relatorio_data_inicial = DateInput(filters, width=12)
+        self.relatorio_data_inicial.grid(row=0, column=1, sticky="w", pady=4)
+        self.relatorio_data_inicial.set(dt.date.today().replace(month=1, day=1).strftime("%d/%m/%Y"))
+        ttk.Label(filters, text="Ate").grid(row=0, column=2, sticky="w", padx=(14, 6), pady=4)
+        self.relatorio_data_final = DateInput(filters, width=12)
+        self.relatorio_data_final.grid(row=0, column=3, sticky="w", pady=4)
+        self.relatorio_data_final.set(dt.date.today().strftime("%d/%m/%Y"))
+        ttk.Label(filters, text="Turma").grid(row=0, column=4, sticky="w", padx=(14, 6), pady=4)
+        self.relatorio_turma_combo = ttk.Combobox(filters, textvariable=self.relatorio_turma_var, state="readonly", width=28)
+        self.relatorio_turma_combo.grid(row=0, column=5, sticky="ew", pady=4)
+        ttk.Label(filters, text="Papel").grid(row=1, column=0, sticky="w", padx=(0, 6), pady=4)
+        ttk.Combobox(filters, textvariable=self.relatorio_papel_var, state="readonly", width=14, values=("Todos", *MULTIPLICA_ENCONTRO_PAPEIS)).grid(row=1, column=1, sticky="w", pady=4)
+        ttk.Label(filters, text="Situacao").grid(row=1, column=2, sticky="w", padx=(14, 6), pady=4)
+        ttk.Combobox(filters, textvariable=self.relatorio_situacao_var, state="readonly", width=16, values=("Todas", *MULTIPLICA_ENCONTRO_SITUACOES)).grid(row=1, column=3, sticky="w", pady=4)
+        actions = ttk.Frame(filters)
+        actions.grid(row=1, column=5, sticky="e", pady=4)
+        ttk.Button(actions, text="Gerar relatorio", command=self._generate_multiplica_report).pack(side="left", padx=(0, 8))
+        ttk.Button(actions, text="Exportar TXT", command=self._export_multiplica_txt).pack(side="left", padx=(0, 8))
+        ttk.Button(actions, text="Exportar CSV", command=self._export_multiplica_csv).pack(side="left")
+
+        self.relatorio_resumo_var = tk.StringVar(value="Defina os filtros e gere o relatorio.")
+        ttk.Label(frame, textvariable=self.relatorio_resumo_var, justify="left").grid(row=1, column=0, sticky="w", pady=(10, 6))
+
+        list_frame = ttk.LabelFrame(frame, text="Encontros encontrados", padding=8)
+        list_frame.grid(row=2, column=0, sticky="nsew")
+        list_frame.columnconfigure(0, weight=1)
+        list_frame.rowconfigure(0, weight=1)
+        columns = ("data", "turma", "pauta", "papel", "situacao", "participantes", "evidencias")
+        self.relatorio_tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=7)
+        headings = {"data": "Data", "turma": "Turma", "pauta": "Pauta", "papel": "Papel", "situacao": "Situacao", "participantes": "Participantes", "evidencias": "Evidencias"}
+        widths = {"data": 95, "turma": 120, "pauta": 70, "papel": 110, "situacao": 120, "participantes": 105, "evidencias": 90}
+        for key in columns:
+            self.relatorio_tree.heading(key, text=headings[key])
+            self.relatorio_tree.column(key, width=widths[key], anchor="w")
+        self.relatorio_tree.grid(row=0, column=0, sticky="nsew")
+        self.relatorio_tree.bind("<<TreeviewSelect>>", lambda _event: self._update_relatorio_preview())
+        report_scroll = ttk.Scrollbar(list_frame, orient="vertical", command=self.relatorio_tree.yview)
+        report_scroll.grid(row=0, column=1, sticky="ns")
+        self.relatorio_tree.configure(yscrollcommand=report_scroll.set)
+
+        preview_frame = ttk.LabelFrame(frame, text="Pre-visualizacao do relatorio", padding=8)
+        preview_frame.grid(row=3, column=0, sticky="nsew", pady=(12, 0))
+        preview_frame.columnconfigure(0, weight=1)
+        preview_frame.rowconfigure(0, weight=1)
+        self.relatorio_preview = tk.Text(preview_frame, wrap="word", height=12)
+        self.relatorio_preview.grid(row=0, column=0, sticky="nsew")
+        preview_scroll = ttk.Scrollbar(preview_frame, orient="vertical", command=self.relatorio_preview.yview)
+        preview_scroll.grid(row=0, column=1, sticky="ns")
+        self.relatorio_preview.configure(yscrollcommand=preview_scroll.set)
+        set_text(self.relatorio_preview, "O relatorio consolidado aparecera aqui.")
+        self._refresh_turma_options()
+
+    def _report_filters(self) -> dict | None:
+        try:
+            data_inicial = normalize_date(self.relatorio_data_inicial.get())
+            data_final = normalize_date(self.relatorio_data_final.get())
+        except ValueError as exc:
+            show_error("Periodo invalido", str(exc), self)
+            return None
+        if data_inicial > data_final:
+            show_error("Periodo invalido", "A data inicial nao pode ser posterior a data final.", self)
+            return None
+        turma_label = self.relatorio_turma_var.get().strip()
+        return {
+            "data_inicial": data_inicial,
+            "data_final": data_final,
+            "turma_id": self.turma_map.get(turma_label) if turma_label != "Todas as turmas" else None,
+            "papel": self.relatorio_papel_var.get() if self.relatorio_papel_var.get() != "Todos" else None,
+            "situacao": self.relatorio_situacao_var.get() if self.relatorio_situacao_var.get() != "Todas" else None,
+        }
+
+    def _generate_multiplica_report(self) -> None:
+        if not self.linked_professor:
+            show_error("Professor vinculado obrigatorio", "Vincule um professor antes de gerar relatorios.", self)
+            return
+        filters = self._report_filters()
+        if filters is None:
+            return
+        self.current_report_rows = self.db.list_multiplica_encontros(int(self.linked_professor["id"]), filters)
+        for item_id in self.relatorio_tree.get_children():
+            self.relatorio_tree.delete(item_id)
+        for encontro in self.current_report_rows:
+            self.relatorio_tree.insert(
+                "", tk.END, iid=str(encontro["id"]), values=(
+                    format_date_display(encontro["data"]), encontro.get("codigo_turma") or "",
+                    encontro.get("pauta_numero") or "", encontro.get("papel_no_encontro") or "",
+                    encontro.get("situacao") or "", encontro.get("participantes") or 0,
+                    encontro.get("imagens") or 0,
+                )
+            )
+        cursistas = self.db.list_multiplica_cursistas(
+            int(self.linked_professor["id"]), filters.get("turma_id"), include_inactive=False
+        )
+        total = len(self.current_report_rows)
+        realizados = sum(1 for item in self.current_report_rows if item.get("situacao") == "realizado")
+        formacoes_recebidas = sum(1 for item in self.current_report_rows if item.get("papel_no_encontro") == "cursista")
+        participantes = sum(int(item.get("participantes") or 0) for item in self.current_report_rows)
+        evidencias = sum(int(item.get("imagens") or 0) for item in self.current_report_rows)
+        self.relatorio_resumo_var.set(
+            f"{total} encontro(s), {realizados} realizado(s), {formacoes_recebidas} como cursista, "
+            f"{len(cursistas)} cursista(s) ativo(s), {participantes} participacao(oes) e {evidencias} evidencia(s)."
+        )
+        turma_texto = self.relatorio_turma_var.get() or "Todas as turmas"
+        linhas = [
+            "RELATORIO - PROGRAMA MULTIPLICA",
+            f"Professor vinculado: {self.linked_professor.get('nome_completo') or '-'}",
+            f"Periodo: {format_date_display(filters['data_inicial'])} a {format_date_display(filters['data_final'])}",
+            f"Turma: {turma_texto}",
+            f"Papel: {self.relatorio_papel_var.get()} | Situacao: {self.relatorio_situacao_var.get()}",
+            "",
+            "RESUMO",
+            f"- Encontros: {total}",
+            f"- Encontros realizados: {realizados}",
+            f"- Formacoes recebidas como cursista: {formacoes_recebidas}",
+            f"- Cursistas ativos acompanhados: {len(cursistas)}",
+            f"- Participacoes registradas: {participantes}",
+            f"- Evidencias anexadas: {evidencias}",
+            "",
+            "ENCONTROS",
+        ]
+        if self.current_report_rows:
+            for encontro in reversed(self.current_report_rows):
+                linhas.extend([
+                    (
+                        f"{format_date_display(encontro['data'])} | Turma {encontro.get('codigo_turma') or '-'} | "
+                        f"Pauta {encontro.get('pauta_numero') or '-'} | {encontro.get('papel_no_encontro') or '-'} | "
+                        f"{encontro.get('situacao') or '-'}"
+                    ),
+                    f"  Horario: {encontro.get('hora_inicio') or '-'} - {encontro.get('hora_termino') or '-'} | Duracao: {encontro.get('duracao') or '-'}",
+                    f"  Participantes: {encontro.get('participantes') or 0} | Evidencias: {encontro.get('imagens') or 0}",
+                ])
+                if encontro.get("observacao"):
+                    linhas.append(f"  Observacao: {encontro['observacao']}")
+        else:
+            linhas.append("Nenhum encontro encontrado para os filtros informados.")
+        linhas.extend(["", "CURSISTAS ATIVOS"])
+        if cursistas:
+            linhas.extend(f"- {item['nome_completo']} ({item.get('codigo_turma') or '-'})" for item in cursistas)
+        else:
+            linhas.append("Nenhum cursista ativo encontrado.")
+        self.current_report_text = "\n".join(linhas)
+        set_text(self.relatorio_preview, self.current_report_text)
+
+    def _update_relatorio_preview(self) -> None:
+        if not hasattr(self, "relatorio_tree"):
+            return
+        selected = self.relatorio_tree.selection()
+        if not selected:
+            return
+        encontro = self.db.get_multiplica_encontro(int(selected[0]))
+        if not encontro:
+            return
+        set_text(
+            self.relatorio_preview,
+            (
+                f"Data: {format_date_display(encontro['data'])}\n"
+                f"Turma: {encontro.get('codigo_turma') or '-'} - {encontro.get('turma_componente') or '-'}\n"
+                f"Pauta: {encontro.get('pauta_numero') or '-'}\n"
+                f"Papel: {encontro.get('papel_no_encontro') or '-'}\n"
+                f"Situacao: {encontro.get('situacao') or '-'}\n"
+                f"Horario: {encontro.get('hora_inicio') or '-'} - {encontro.get('hora_termino') or '-'}\n"
+                f"Duracao: {encontro.get('duracao') or '-'}\n"
+                f"Participantes: {encontro.get('participantes') or 0}\n\n"
+                f"Observacao:\n{encontro.get('observacao') or '-'}"
+            ),
+        )
+
+    def _export_multiplica_txt(self) -> None:
+        if not self.current_report_text:
+            show_error("Sem relatorio", "Gere o relatorio antes de exportar.", self)
+            return
+        EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+        target = filedialog.asksaveasfilename(
+            parent=self, title="Exportar relatorio em TXT", defaultextension=".txt",
+            initialdir=str(EXPORT_DIR), initialfile=f"relatorio_multiplica_{current_timestamp().replace(':', '-').replace(' ', '_')}.txt",
+            filetypes=[("Texto", "*.txt"), ("Todos os arquivos", "*.*")],
+        )
+        if not target:
+            return
+        Path(target).write_text(self.current_report_text, encoding="utf-8")
+        show_info("Exportacao concluida", f"Relatorio salvo em:\n{target}", self)
+
+    def _export_multiplica_csv(self) -> None:
+        if not self.current_report_rows:
+            show_error("Sem dados", "Gere um relatorio com encontros antes de exportar.", self)
+            return
+        EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+        target = filedialog.asksaveasfilename(
+            parent=self, title="Exportar relatorio em CSV", defaultextension=".csv",
+            initialdir=str(EXPORT_DIR), initialfile=f"relatorio_multiplica_{current_timestamp().replace(':', '-').replace(' ', '_')}.csv",
+            filetypes=[("CSV", "*.csv"), ("Todos os arquivos", "*.*")],
+        )
+        if not target:
+            return
+        fields = ["data", "codigo_turma", "turma_componente", "pauta_numero", "papel_no_encontro", "situacao", "hora_inicio", "hora_termino", "duracao", "participantes", "imagens", "observacao"]
+        with Path(target).open("w", encoding="utf-8-sig", newline="") as output:
+            writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(self.current_report_rows)
+        show_info("Exportacao concluida", f"Relatorio salvo em:\n{target}", self)
 
     def _weekday_index_from_sigla(self, sigla: str) -> int | None:
         mapping = {

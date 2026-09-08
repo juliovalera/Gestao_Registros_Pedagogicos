@@ -2,10 +2,11 @@
 
 Sistema local em Python 3 para registrar, consultar, analisar e exportar informações da rotina pedagógica escolar de forma organizada, cronológica e profissional.
 
-Versão atual: `1.054`
+Versão atual: `1.056`
 
 Status desta versão:
 
+- Programa Multiplica com cadastro de turmas e cursistas, registro de encontros, evidências e relatórios por período
 - unificação do registro oficial de ausências dentro de intercorrências, com migração segura do histórico legado
 
 ## Visão geral
@@ -53,6 +54,20 @@ Ribeirão Preto
 - exportação de gráficos em PNG
 - backup e restauração do banco local
 - anexos opcionais de evidências por imagem em intercorrências e rotinas docentes
+
+## Programa Multiplica
+
+O Programa Multiplica pode ser habilitado em `Segurança > Modo do Programa Multiplica`, vinculando o usuário a um professor cadastrado. Cada usuário pode atuar como professor multiplicador, professor cursista ou permanecer em uso geral.
+
+No modo de professor multiplicador, o sistema oferece:
+
+- cadastro de turmas, com código, dia da semana, horário, componente e situação
+- cadastro de professores cursistas vinculados a cada turma, com contatos, observações e situação ativa ou inativa
+- registro de encontros com pauta, horários, duração, participantes, observações e evidências em imagem
+- registro do papel desempenhado no encontro: `multiplicador` para encontros conduzidos e `cursista` para as formações recebidas pelo multiplicador
+- consulta dos encontros de qualquer mês: escolha uma data do mês desejado e use `Atualizar mes`; depois selecione o item e use `Carregar selecionado` para editar
+- relatório filtrável por período, turma, papel e situação, com totais de participantes, evidências e formações recebidas como cursista
+- exportação do relatório do Programa Multiplica em TXT e CSV
 
 ## Estrutura do projeto
 
