@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import csv
 import datetime as dt
+from io import BytesIO
+import os
 from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, ttk
@@ -836,6 +838,18 @@ class MultiplicaWindow(tk.Toplevel):
         preview_scroll = ttk.Scrollbar(preview_frame, orient="vertical", command=self.relatorio_preview.yview)
         preview_scroll.grid(row=0, column=1, sticky="ns")
         self.relatorio_preview.configure(yscrollcommand=preview_scroll.set)
+        pdf_actions = ttk.Frame(preview_frame)
+        pdf_actions.grid(row=1, column=0, sticky="e", pady=(8, 0))
+        ttk.Button(
+            pdf_actions,
+            text="Gerar PDF do encontro selecionado",
+            command=self._export_multiplica_encontro_pdf,
+        ).pack(side="left", padx=(0, 8))
+        ttk.Button(
+            pdf_actions,
+            text="Abrir pasta de PDFs",
+            command=self._open_multiplica_pdf_exports,
+        ).pack(side="left")
         set_text(self.relatorio_preview, "O relat\u00f3rio consolidado aparecer\u00e1 aqui.")
         self._refresh_turma_options()
 
@@ -953,6 +967,275 @@ class MultiplicaWindow(tk.Toplevel):
                 f"Observa\u00e7\u00e3o:\n{encontro.get('observacao') or '-'}"
             ),
         )
+
+    def _selected_relatorio_encontro_id(self) -> int | None:
+        selected = self.relatorio_tree.selection() if hasattr(self, "relatorio_tree") else ()
+        return int(selected[0]) if selected else None
+
+    def _export_multiplica_encontro_pdf(self) -> None:
+        encontro_id = self._selected_relatorio_encontro_id()
+        if not encontro_id:
+            show_error(
+                "Sele\u00e7\u00e3o necess\u00e1ria",
+                "Selecione um encontro na tabela antes de gerar o PDF.",
+                self,
+            )
+            return
+
+        try:
+            from reportlab.lib.pagesizes import A4  # noqa: F401
+            from reportlab.platypus import SimpleDocTemplate  # noqa: F401
+            from PIL import Image as PILImage  # noqa: F401
+        except ImportError:
+            show_error(
+                "Depend\u00eancia ausente",
+                "A exporta\u00e7\u00e3o em PDF com evid\u00eancias exige reportlab e Pillow.\n\n"
+                "Use no terminal:\npip install -r requirements.txt",
+                self,
+            )
+            return
+
+        encontro = self.db.get_multiplica_encontro(encontro_id)
+        if not encontro:
+            show_error("Encontro n\u00e3o encontrado", "N\u00e3o foi poss\u00edvel carregar o encontro selecionado.", self)
+            return
+
+        EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+        date_key = (encontro.get("data") or "sem_data").replace("/", "-")
+        target = filedialog.asksaveasfilename(
+            parent=self,
+            title="Gerar PDF do encontro",
+            defaultextension=".pdf",
+            initialdir=str(EXPORT_DIR),
+            initialfile=f"encontro_multiplica_{date_key}_{encontro_id}.pdf",
+            filetypes=[("PDF", "*.pdf"), ("Todos os arquivos", "*.*")],
+        )
+        if not target:
+            return
+
+        try:
+            self._create_multiplica_encontro_pdf(encontro, Path(target))
+        except Exception as exc:
+            show_error("Falha ao gerar PDF", str(exc), self)
+            return
+        show_info("PDF gerado", f"Relat\u00f3rio do encontro salvo em:\n{target}", self)
+
+    def _open_multiplica_pdf_exports(self) -> None:
+        """Abre a pasta local usada como destino padr\u00e3o dos PDFs exportados."""
+        EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+        try:
+            os.startfile(str(EXPORT_DIR))
+        except OSError as exc:
+            show_error("N\u00e3o foi poss\u00edvel abrir a pasta", str(exc), self)
+
+    def _create_multiplica_encontro_pdf(self, encontro: dict, target: Path) -> None:
+        """Gera um PDF individual, com dados leg\u00edveis e evid\u00eancias do encontro."""
+        from reportlab.lib import colors
+        from reportlab.lib.enums import TA_CENTER
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+        from reportlab.lib.units import cm
+        from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+        from PIL import Image as PILImage
+        from xml.sax.saxutils import escape
+
+        page_width, page_height = A4
+        left_margin = 1.7 * cm
+        right_margin = 1.7 * cm
+        top_margin = 2.1 * cm
+        bottom_margin = 1.8 * cm
+        content_width = page_width - left_margin - right_margin
+        generated_at = current_timestamp()
+        professor_name = (self.linked_professor or {}).get("nome_completo") or "N\u00e3o informado"
+
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            "MultiplicaTitle",
+            parent=styles["Title"],
+            fontName="Helvetica-Bold",
+            fontSize=18,
+            leading=22,
+            textColor=colors.HexColor("#123B5D"),
+            alignment=TA_CENTER,
+            spaceAfter=5,
+        )
+        subtitle_style = ParagraphStyle(
+            "MultiplicaSubtitle",
+            parent=styles["Normal"],
+            fontName="Helvetica",
+            fontSize=10,
+            leading=14,
+            textColor=colors.HexColor("#3E4A52"),
+            alignment=TA_CENTER,
+            spaceAfter=14,
+        )
+        section_style = ParagraphStyle(
+            "MultiplicaSection",
+            parent=styles["Heading2"],
+            fontName="Helvetica-Bold",
+            fontSize=12,
+            leading=16,
+            textColor=colors.HexColor("#123B5D"),
+            spaceBefore=12,
+            spaceAfter=6,
+        )
+        body_style = ParagraphStyle(
+            "MultiplicaBody",
+            parent=styles["BodyText"],
+            fontName="Helvetica",
+            fontSize=10.5,
+            leading=15,
+            textColor=colors.HexColor("#1D252B"),
+        )
+        label_style = ParagraphStyle(
+            "MultiplicaLabel",
+            parent=body_style,
+            fontName="Helvetica-Bold",
+        )
+        caption_style = ParagraphStyle(
+            "MultiplicaCaption",
+            parent=body_style,
+            fontSize=9,
+            leading=12,
+            textColor=colors.HexColor("#4C5962"),
+            spaceAfter=6,
+        )
+
+        def paragraph(value: object, style=body_style) -> Paragraph:
+            text = escape(str(value if value not in (None, "") else "-"))
+            return Paragraph(text.replace("\n", "<br/>"), style)
+
+        def prepare_evidence_image(raw_data: bytes) -> tuple[BytesIO, int, int]:
+            """Decodifica a imagem antes do build para isolar anexos corrompidos."""
+            with PILImage.open(BytesIO(raw_data)) as source:
+                source.load()
+                has_transparency = "A" in source.getbands() or "transparency" in source.info
+                if has_transparency:
+                    rgba = source.convert("RGBA")
+                    prepared = PILImage.new("RGB", rgba.size, "white")
+                    prepared.paste(rgba, mask=rgba.getchannel("A"))
+                else:
+                    prepared = source.convert("RGB")
+
+                output = BytesIO()
+                prepared.save(output, format="PNG")
+                output.seek(0)
+                return output, prepared.width, prepared.height
+
+        def header_footer(pdf, doc) -> None:
+            repository_url = "https://github.com/juliovalera/Gestao_Registros_Pedagogicos"
+            pdf.saveState()
+            pdf.setStrokeColor(colors.HexColor("#123B5D"))
+            pdf.setLineWidth(0.6)
+            pdf.line(left_margin, page_height - 1.25 * cm, page_width - right_margin, page_height - 1.25 * cm)
+            pdf.setFont("Helvetica", 8)
+            pdf.setFillColor(colors.HexColor("#4C5962"))
+            footer_y = 1.05 * cm
+            pdf.drawString(left_margin, footer_y, "Gest\u00e3o de Registros Pedag\u00f3gicos | Programa Multiplica")
+            pdf.drawRightString(page_width - right_margin, footer_y, f"P\u00e1gina {doc.page}")
+            pdf.setFont("Helvetica", 7.5)
+            pdf.setFillColor(colors.HexColor("#123B5D"))
+            link_width = pdf.stringWidth(repository_url, "Helvetica", 7.5)
+            link_x = (page_width - link_width) / 2
+            link_y = 0.58 * cm
+            pdf.drawString(link_x, link_y, repository_url)
+            pdf.line(link_x, link_y - 1.2, link_x + link_width, link_y - 1.2)
+            pdf.linkURL(
+                repository_url,
+                (link_x, link_y - 2, link_x + link_width, link_y + 8),
+                relative=0,
+                thickness=0,
+            )
+            pdf.restoreState()
+
+        story = [
+            Paragraph("RELAT\u00d3RIO DE ENCONTRO", title_style),
+            Paragraph("Programa Multiplica | Registro individual com evid\u00eancias", subtitle_style),
+        ]
+
+        details = [
+            ("Professor vinculado", professor_name),
+            ("Turma", encontro.get("codigo_turma")),
+            ("Componente", encontro.get("turma_componente")),
+            ("Data", format_date_display(encontro.get("data") or "")),
+            ("N\u00ba da pauta", encontro.get("pauta_numero")),
+            ("Papel no encontro", encontro.get("papel_no_encontro")),
+            ("Situa\u00e7\u00e3o", encontro.get("situacao")),
+            ("Hor\u00e1rio", f"{encontro.get('hora_inicio') or '-'} at\u00e9 {encontro.get('hora_termino') or '-'}"),
+            ("Dura\u00e7\u00e3o", encontro.get("duracao")),
+            ("Participantes", encontro.get("participantes") or 0),
+            ("Evid\u00eancias anexadas", len(encontro.get("evidencias") or [])),
+            ("Gerado em", generated_at),
+        ]
+        table_data = [[paragraph(label, label_style), paragraph(value)] for label, value in details]
+        details_table = Table(table_data, colWidths=(4.2 * cm, content_width - 4.2 * cm), hAlign="LEFT")
+        details_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#E8F0F5")),
+                    ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#AAB9C4")),
+                    ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#CBD6DE")),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 7),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+                    ("TOPPADDING", (0, 0), (-1, -1), 6),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ]
+            )
+        )
+        story.extend([details_table, Spacer(1, 12), Paragraph("Observa\u00e7\u00f5es", section_style)])
+        story.append(paragraph(encontro.get("observacao") or "Nenhuma observa\u00e7\u00e3o registrada."))
+
+        evidencias = encontro.get("evidencias") or []
+        story.extend([Spacer(1, 8), Paragraph("Evid\u00eancias", section_style)])
+        if not evidencias:
+            story.append(paragraph("Nenhuma imagem de evid\u00eancia foi anexada a este encontro."))
+        else:
+            story.append(
+                paragraph(
+                    f"Foram anexadas {len(evidencias)} evid\u00eancia(s). Cada imagem est\u00e1 identificada pelo nome do arquivo original.",
+                    caption_style,
+                )
+            )
+            max_image_width = content_width
+            max_image_height = 15.5 * cm
+            for index, evidencia in enumerate(evidencias, start=1):
+                name = evidencia.get("nome_arquivo") or f"evidencia_{index}.png"
+                story.append(Paragraph(f"Evid\u00eancia {index}: {escape(name)}", label_style))
+                story.append(Spacer(1, 4))
+                try:
+                    evidence_data = evidencia.get("dados") or b""
+                    image_data, image_width, image_height = prepare_evidence_image(evidence_data)
+                    scale = min(max_image_width / image_width, max_image_height / image_height, 1.0)
+                    story.append(
+                        Image(
+                            image_data,
+                            width=image_width * scale,
+                            height=image_height * scale,
+                            hAlign="CENTER",
+                        )
+                    )
+                    story.append(Spacer(1, 5))
+                except Exception:
+                    story.append(
+                        paragraph(
+                            "N\u00e3o foi poss\u00edvel renderizar esta imagem no PDF. O nome da evid\u00eancia permanece registrado acima.",
+                            caption_style,
+                        )
+                    )
+                story.append(Spacer(1, 8))
+
+        document = SimpleDocTemplate(
+            str(target),
+            pagesize=A4,
+            title="Relat\u00f3rio de encontro - Programa Multiplica",
+            author="Gest\u00e3o de Registros Pedag\u00f3gicos",
+            leftMargin=left_margin,
+            rightMargin=right_margin,
+            topMargin=top_margin,
+            bottomMargin=bottom_margin,
+        )
+        document.build(story, onFirstPage=header_footer, onLaterPages=header_footer)
 
     def _export_multiplica_txt(self) -> None:
         if not self.current_report_text:
