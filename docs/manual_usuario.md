@@ -2,7 +2,7 @@
 
 Este manual orienta o uso diário do sistema para registros pedagógicos, organização de informações, consultas, relatórios, backups e acompanhamento do Programa Multiplica.
 
-Versão de referência do sistema: `1.060`
+Versão de referência do sistema: `1.061`
 
 ## Finalidade
 
@@ -272,7 +272,7 @@ O relatório apresenta:
 
 Selecione um encontro na tabela para visualizar seus detalhes. O relatório pode ser exportado em TXT ou CSV.
 
-Para criar um documento individual do encontro, selecione a linha desejada e use `Gerar PDF do encontro selecionado`. O PDF organiza os dados do encontro, as observações e, quando existirem, as imagens das evidências com seus respectivos nomes de arquivo. Se uma imagem anexada não puder ser lida, o documento continua sendo gerado e informa a evidência que não foi renderizada.
+Para criar um documento individual do encontro, selecione a linha desejada e use `Gerar PDF do encontro selecionado`. O PDF organiza os dados do encontro, as observações e, quando existirem, as imagens das evidências com seus respectivos nomes de arquivo. O nome sugerido inclui a data e a hora da geração, preservando os PDFs já exportados. Se uma imagem anexada não puder ser lida, o documento continua sendo gerado e informa a evidência que não foi renderizada.
 
 ## Evidências em imagem
 

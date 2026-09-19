@@ -4,7 +4,7 @@
 
 **Sistema local para organizar registros pedagógicos, preservar históricos e produzir relatórios com segurança.**
 
-[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.060-0F5F8F?style=flat-square)](#versão-atual)
+[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.061-0F5F8F?style=flat-square)](#versão-atual)
 [![Python](https://img.shields.io/badge/Python-3-3776AB?style=flat-square&logo=python&logoColor=white)](#instalação)
 [![Banco de dados](https://img.shields.io/badge/banco-SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)](#arquitetura-local)
 [![Licença](https://img.shields.io/badge/licença-MIT-2E7D32?style=flat-square)](LICENSE)
@@ -23,14 +23,14 @@ O **Gestão de Registros Pedagógicos** é uma aplicação desktop em Python par
 
 ## Versão atual
 
-`1.060`
+`1.061`
 
 Nesta versão, destacam-se:
 
 | Entrega | Resultado prático |
 |---|---|
 | Ausências unificadas | O registro oficial é feito em `Nova intercorrência > Ausência de professor`, evitando divergências nos relatórios. |
-| Programa Multiplica | Cadastro de turmas e cursistas, encontros, evidências e relatórios por período, incluindo PDF individual do encontro. |
+| Programa Multiplica | Cadastro de turmas e cursistas, encontros, evidências e relatórios por período, incluindo PDF individual com nome único por geração. |
 | Calendário e horários | Campos de data com calendário e horários no padrão `HH:MM`. |
 | Backup aprimorado | Lista ordenada pelo mais recente, com tamanho, data de modificação e exclusão confirmada. |
 
@@ -130,7 +130,7 @@ Na primeira execução, o sistema solicita a criação do primeiro usuário e cr
 | Recurso | Saídas disponíveis |
 |---|---|
 | Relatórios gerais | Visualização, TXT, CSV e PDF quando `reportlab` estiver instalado. |
-| Relatórios do Programa Multiplica | Visualização, TXT, CSV e PDF individual do encontro selecionado, com dados, observações e imagens das evidências. |
+| Relatórios do Programa Multiplica | Visualização, TXT, CSV e PDF individual do encontro selecionado, com dados, observações, imagens das evidências e nome datado para preservar exportações anteriores. |
 | Gráficos | Visualização local e exportação em PNG. |
 | Evidências | Quantidade, nomes de arquivos ou inclusão em PDF, conforme a opção escolhida no relatório geral. |
 

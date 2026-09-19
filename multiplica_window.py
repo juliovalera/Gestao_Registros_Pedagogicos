@@ -1002,12 +1002,13 @@ class MultiplicaWindow(tk.Toplevel):
 
         EXPORT_DIR.mkdir(parents=True, exist_ok=True)
         date_key = (encontro.get("data") or "sem_data").replace("/", "-")
+        generated_key = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S_%f")
         target = filedialog.asksaveasfilename(
             parent=self,
             title="Gerar PDF do encontro",
             defaultextension=".pdf",
             initialdir=str(EXPORT_DIR),
-            initialfile=f"encontro_multiplica_{date_key}_{encontro_id}.pdf",
+            initialfile=f"encontro_multiplica_{date_key}_{encontro_id}_gerado_{generated_key}.pdf",
             filetypes=[("PDF", "*.pdf"), ("Todos os arquivos", "*.*")],
         )
         if not target:
